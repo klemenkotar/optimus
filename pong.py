@@ -5,10 +5,10 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 
-FILE = np.load('embeddings.npy', mmap_mode='r')
+FILE = np.load('data/embeddings.npy', mmap_mode='r')
 BATCH_SIZE = 1
 SEQ_LEN = 1000
-NUM_EPOCHS = 20
+NUM_EPOCHS = 100
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def make_batch(idx, n, batch_size=1):
@@ -36,16 +36,23 @@ for e in range(NUM_EPOCHS):
         optim.zero_grad()
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
         out = transfomer(seq, tgt)
-        out = torch.sigmoid(out)
-        loss = F.binary_cross_entropy(out, tgt)
-        loss.backward()
+        # compute the 3 different loss functions
+        emb_loss = F.binary_cross_entropy(torch.sigmoid(out[:,:,:512]), torch.sigmoid(tgt[:,:,:512]))
+        action_loss = F.cross_entropy(out[:,:,512:518].squeeze(), torch.argmax(tgt[:,:,512:518].squeeze(), dim=1))
+        value_loss = F.mse_loss(out[:,:,518], tgt[:,:,518])
+        loss = emb_loss + action_loss + value_loss
+        loss.backward()     
         optim.step()
         train_losses.append(loss.item())
     for idx in generate_batch_indexes(900000, 1000000, SEQ_LEN * BATCH_SIZE):
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
         out = transfomer(seq, tgt)
-        out = torch.sigmoid(out)
-        loss = F.binary_cross_entropy(out, tgt)
+        # compute the 3 different loss functions
+        emb_loss = F.binary_cross_entropy(torch.sigmoid(out[:,:,:512]), torch.sigmoid(tgt[:,:,:512]))
+        action_loss = F.cross_entropy(out[:,:,512:518], torch.argmax(tgt[:,:,512:518]))
+        value_loss = F.mse_loss(out[:,:,518], tgt[:,:,518])
+        loss = emb_loss + action_loss + value_loss
+        loss.backward()
         test_losses.append(loss.item())
     print("Epoch:", e+1, "\tTrain Loss:", np.mean(train_losses), "\tTest Loss:", np.mean(test_losses))
 
