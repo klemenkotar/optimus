@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import random
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 
 FILE = np.load('data/embeddings.npy', mmap_mode='r')
 BATCH_SIZE = 1
@@ -33,8 +34,12 @@ optim = torch.optim.Adam(transfomer.parameters())
 for e in range(NUM_EPOCHS):
     train_losses = []
     test_losses = []
+    test_action_loss = []
+    test_value_loss = []
+    test_emb_loss = []
     # train
-    for idx in generate_batch_indexes(0, 900000, SEQ_LEN * BATCH_SIZE):
+    print("Training")
+    for idx in tqdm(generate_batch_indexes(0, 900000, SEQ_LEN * BATCH_SIZE)):
         optim.zero_grad()
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
         out = transfomer(seq, tgt)
@@ -46,6 +51,7 @@ for e in range(NUM_EPOCHS):
         loss.backward()     
         optim.step()
         train_losses.append(loss.item())
+    print("Testing")
     for idx in generate_batch_indexes(900000, 1000000, SEQ_LEN * BATCH_SIZE):
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
         out = transfomer(seq, tgt)
@@ -53,10 +59,14 @@ for e in range(NUM_EPOCHS):
         emb_loss = F.binary_cross_entropy(torch.sigmoid(out[:,:,:512]), torch.sigmoid(tgt[:,:,:512]))
         action_loss = F.cross_entropy(out[:,:,512:518].squeeze(), torch.argmax(tgt[:,:,512:518].squeeze(), dim=1))
         value_loss = F.mse_loss(out[:,:,518], tgt[:,:,518])
+        test_emb_loss.append(emb_loss.item())
+        test_action_loss.append(action_loss.item())
+        test_value_loss.append(value_loss.item())
         loss = emb_loss + action_loss + value_loss
         loss.backward()
         test_losses.append(loss.item())
-    print("Epoch:", e+1, "\tTrain Loss:", np.mean(train_losses), "\tTest Loss:", np.mean(test_losses))
+    print("Epoch:", e+1, "\tTrain Loss:", np.mean(train_losses), "\tTotal Test Loss:", np.mean(test_losses), 
+        " Emb:", np.mean(test_emb_loss), " Action:", np.mean(test_action_loss), " Value:", np.mean(test_value_loss))
 
 seq, tgt = make_batch(90000, SEQ_LEN, batch_size=1)
 out = transfomer(seq, tgt)
