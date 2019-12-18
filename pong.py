@@ -12,9 +12,11 @@ NUM_EPOCHS = 100
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def make_batch(idx, n, batch_size=1):
-    seq = torch.tensor(FILE[idx:idx+(n*batch_size)]).to(DEVICE)
-    seq = seq.view(n, batch_size, -1).float()
-    return seq[:n//2], seq
+    tgt = torch.tensor(FILE[idx:idx+(n*batch_size)]).to(DEVICE)
+    tgt = tgt.view(n, batch_size, -1).float()
+    seq = tgt.detach().clone()
+    seq[torch.randint(0, n, (n//8,))] = 0.0 #-float("inf")
+    return tgt, seq
 
 def generate_batch_indexes(start, stop, step):
     idxs = []
