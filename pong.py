@@ -8,7 +8,7 @@ import numpy as np
 FILE = np.load('embeddings.npy', mmap_mode='r')
 BATCH_SIZE = 1
 SEQ_LEN = 1000
-NUM_EPOCHS = 100
+NUM_EPOCHS = 20
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def make_batch(idx, n, batch_size=1):
@@ -35,8 +35,6 @@ for e in range(NUM_EPOCHS):
     for idx in generate_batch_indexes(0, 900000, SEQ_LEN * BATCH_SIZE):
         optim.zero_grad()
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
-        print("seq dim", seq.shape)
-        print("tgt dim", tgt.shape)
         out = transfomer(seq, tgt)
         out = torch.sigmoid(out)
         loss = F.binary_cross_entropy(out, tgt)
