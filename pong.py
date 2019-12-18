@@ -44,6 +44,7 @@ for e in range(NUM_EPOCHS):
         loss.backward()     
         optim.step()
         train_losses.append(loss.item())
+        print(loss.item())
     for idx in generate_batch_indexes(900000, 1000000, SEQ_LEN * BATCH_SIZE):
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
         out = transfomer(seq, tgt)
