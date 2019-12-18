@@ -38,6 +38,7 @@ for e in range(NUM_EPOCHS):
         out = transfomer(seq, tgt)
         # compute the 3 different loss functions
         emb_loss = F.binary_cross_entropy(torch.sigmoid(out[:,:,:512]), torch.sigmoid(tgt[:,:,:512]))
+        print("idx:", idx, " --- out shape:", out[:,:,512:518].squeeze().shape, " --- tgt shape:", torch.argmax(tgt[:,:,512:518].squeeze(), dim=1).shape)
         action_loss = F.cross_entropy(out[:,:,512:518].squeeze(), torch.argmax(tgt[:,:,512:518].squeeze(), dim=1))
         value_loss = F.mse_loss(out[:,:,518], tgt[:,:,518])
         loss = emb_loss + action_loss + value_loss
