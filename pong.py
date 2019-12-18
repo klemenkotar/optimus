@@ -8,7 +8,7 @@ import numpy as np
 FILE = np.load('data/embeddings.npy', mmap_mode='r')
 BATCH_SIZE = 1
 SEQ_LEN = 1000
-NUM_EPOCHS = 100
+NUM_EPOCHS = 10
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def make_batch(idx, n, batch_size=1):
