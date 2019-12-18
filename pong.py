@@ -7,9 +7,9 @@ import numpy as np
 from tqdm import tqdm
 
 FILE = np.load('data/embeddings.npy', mmap_mode='r')
-BATCH_SIZE = 1
-SEQ_LEN = 1000
-NUM_EPOCHS = 5
+BATCH_SIZE = 10
+SEQ_LEN = 100
+NUM_EPOCHS = 100
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def make_batch(idx, n, batch_size=1):
@@ -23,7 +23,10 @@ def generate_batch_indexes(start, stop, step):
     idxs = []
     idx = start
     while idx < stop:
-        idxs.append(idx)
+        tidx = idx + random.randint(-1000, 1000)
+        tidx = max(0, tidx)
+        tidx = min(stop-step, tidx)
+        idxs.append(tidx)
         idx += step
     random.shuffle(idxs)
     return idxs
