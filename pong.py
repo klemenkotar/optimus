@@ -52,7 +52,7 @@ for e in range(NUM_EPOCHS):
         optim.step()
         train_losses.append(loss.item())
     print("Testing")
-    for idx in generate_batch_indexes(900000, 1000000, SEQ_LEN * BATCH_SIZE):
+    for idx in tqdm(generate_batch_indexes(900000, 1000000, SEQ_LEN * BATCH_SIZE)):
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
         out = transfomer(seq, tgt)
         # compute the 3 different loss functions
@@ -65,8 +65,8 @@ for e in range(NUM_EPOCHS):
         loss = emb_loss + action_loss + value_loss
         loss.backward()
         test_losses.append(loss.item())
-    print("Epoch:", e+1, "\tTrain Loss:", np.mean(train_losses), "\tTotal Test Loss:", np.mean(test_losses), 
-        " Emb:", np.mean(test_emb_loss), " Action:", np.mean(test_action_loss), " Value:", np.mean(test_value_loss))
+    print("Epoch:", e+1, "\tTrain Loss:", np.mean(train_losses), "\tTotal Test Loss:", np.mean(test_losses))
+    print("Emb Loss:", np.mean(test_emb_loss), "\tAction Loss:", np.mean(test_action_loss), "\tValue Loss:", np.mean(test_value_loss))
 
 seq, tgt = make_batch(90000, SEQ_LEN, batch_size=1)
 out = transfomer(seq, tgt)
