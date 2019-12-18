@@ -7,8 +7,8 @@ import numpy as np
 from tqdm import tqdm
 
 FILE = np.load('data/embeddings.npy', mmap_mode='r')
-BATCH_SIZE = 2
-SEQ_LEN = 1000
+BATCH_SIZE = 10
+SEQ_LEN = 200
 NUM_EPOCHS = 10
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
