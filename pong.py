@@ -11,7 +11,7 @@ from os import path
 FILE = np.load('data/embeddings.npy')
 BATCH_SIZE = 1
 SEQ_LEN = 500
-NUM_EPOCHS = 20
+NUM_EPOCHS = 1000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'model.pt'
 
@@ -92,7 +92,7 @@ seq, gt, tgt = make_batch(0, SEQ_LEN, batch_size=1)
 out = transfomer(seq, gt)
 plt.figure(1)
 plt.imshow(tgt.squeeze().cpu().detach().numpy().swapaxes(0,1))
-plt.savefig('tgt-5288')
+plt.savefig('tgt-528')
 plt.figure(2)
 plt.imshow(out.squeeze().cpu().detach().numpy().swapaxes(0,1))
 plt.savefig('out-528')
