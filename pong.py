@@ -15,7 +15,7 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def make_batch(idx, n, batch_size=1):
     tgt = torch.tensor(FILE[idx:idx+(n*batch_size)]).to(DEVICE)
     tgt = tgt.view(n, batch_size, -1).float()
-    tgt = torch.clamp(torch.round(tgt), 0.0, 1.0)
+    tgt = torch.clamp(torch.round(tgt), 0.0, 1.0)[:,:,:32]
     seq = tgt.detach().clone()
     seq[torch.randint(0, n, (n//8,))] = 0.0 #-float("inf")
     return tgt, tgt
@@ -32,7 +32,7 @@ def generate_batch_indexes(start, stop, step):
     random.shuffle(idxs)
     return idxs
 
-transfomer = nn.Transformer(d_model=528, nhead=16, num_encoder_layers=12).to(DEVICE)
+transfomer = nn.Transformer(d_model=32, nhead=16, num_encoder_layers=12).to(DEVICE)
 # encoder_layers = nn.TransformerEncoderLayer(528, 16, 528, dropout=0.4)
 # transfomer = nn.TransformerEncoder(encoder_layers, 12).to(DEVICE)
 optim = torch.optim.Adam(transfomer.parameters())
