@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 FILE = np.load('data/embeddings.npy')
 BATCH_SIZE = 1
-SEQ_LEN = 256
+SEQ_LEN = 1000
 NUM_EPOCHS = 50
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -32,7 +32,7 @@ def generate_batch_indexes(start, stop, step):
     random.shuffle(idxs)
     return idxs
 
-transfomer = nn.Transformer(d_model=256, nhead=8, num_encoder_layers=12).to(DEVICE)
+transfomer = nn.Transformer(d_model=256, nhead=4, num_encoder_layers=12).to(DEVICE)
 # encoder_layers = nn.TransformerEncoderLayer(528, 16, 528, dropout=0.4)
 # transfomer = nn.TransformerEncoder(encoder_layers, 12).to(DEVICE)
 optim = torch.optim.Adam(transfomer.parameters())
