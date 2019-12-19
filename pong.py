@@ -5,12 +5,15 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
+import atexit
+from os import path
 
 FILE = np.load('data/embeddings.npy')
 BATCH_SIZE = 1
 SEQ_LEN = 500
-NUM_EPOCHS = 300
+NUM_EPOCHS = 20
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+PATH = 'model.pt'
 
 def make_batch(idx, n, batch_size=1):
     tgt = torch.tensor(FILE[idx:idx+(n*batch_size)]).to(DEVICE)
@@ -33,9 +36,17 @@ def generate_batch_indexes(start, stop, step):
     return idxs
 
 transfomer = nn.Transformer(d_model=528, nhead=16, num_encoder_layers=12).to(DEVICE)
+if path.exists(PATH):
+    print("Loading model from", PATH)
+    transfomer.load_state_dict(torch.load(PATH))
 # encoder_layers = nn.TransformerEncoderLayer(528, 16, 528, dropout=0.4)
 # transfomer = nn.TransformerEncoder(encoder_layers, 12).to(DEVICE)
-optim = torch.optim.Adam(transfomer.parameters(), lr=1e-4, weight_decay=0.01)
+optim = torch.optim.Adam(transfomer.parameters(), lr=1e-3, weight_decay=0.01)
+
+def exit_handler():
+    print("Saving model as", PATH)
+    torch.save(transfomer.state_dict(), PATH)
+atexit.register(exit_handler)
 
 for e in range(NUM_EPOCHS):
     train_losses = []
