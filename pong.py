@@ -18,7 +18,7 @@ def make_batch(idx, n, batch_size=1):
     tgt = torch.clamp(torch.round(tgt), 0.0, 1.0)[:,:,:64]
     seq = tgt.detach().clone()
     seq[torch.randint(0, n, (n//8,))] = 0.0 #-float("inf")
-    return tgt, tgt
+    return tgt[:-1], tgt[1:]
 
 def generate_batch_indexes(start, stop, step):
     idxs = []
