@@ -7,9 +7,9 @@ import numpy as np
 from tqdm import tqdm
 
 FILE = np.load('data/embeddings.npy')
-BATCH_SIZE = 20
-SEQ_LEN = 100
-NUM_EPOCHS = 10
+BATCH_SIZE = 2
+SEQ_LEN = 500
+NUM_EPOCHS = 100
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def make_batch(idx, n, batch_size=1):
@@ -44,7 +44,7 @@ for e in range(NUM_EPOCHS):
     test_emb_loss = []
     # train
     print("Training")
-    for idx in tqdm(generate_batch_indexes(0, 900000, SEQ_LEN * BATCH_SIZE)):
+    for idx in tqdm(generate_batch_indexes(0, 90000, SEQ_LEN * BATCH_SIZE)):
         optim.zero_grad()
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
         out = transfomer(seq, seq)
@@ -58,7 +58,7 @@ for e in range(NUM_EPOCHS):
         optim.step()
         train_losses.append(loss.item())
     print("Testing")
-    for idx in tqdm(generate_batch_indexes(900000, 1000000, SEQ_LEN * BATCH_SIZE)):
+    for idx in tqdm(generate_batch_indexes(90000, 100000, SEQ_LEN * BATCH_SIZE)):
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
         out = transfomer(seq, seq)
         # compute the 3 different loss functions
