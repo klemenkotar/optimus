@@ -9,7 +9,7 @@ from tqdm import tqdm
 FILE = np.load('data/embeddings.npy')
 BATCH_SIZE = 2
 SEQ_LEN = 500
-NUM_EPOCHS = 10
+NUM_EPOCHS = 30
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def make_batch(idx, n, batch_size=1):
@@ -18,7 +18,7 @@ def make_batch(idx, n, batch_size=1):
     tgt = torch.clamp(torch.round(tgt), 0.0, 1.0)
     seq = tgt.detach().clone()
     seq[torch.randint(0, n, (n//8,))] = 0.0 #-float("inf")
-    return tgt[:-1], tgt[1:]
+    return tgt, tgt
 
 def generate_batch_indexes(start, stop, step):
     idxs = []
