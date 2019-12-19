@@ -9,12 +9,13 @@ from tqdm import tqdm
 FILE = np.load('data/embeddings.npy')
 BATCH_SIZE = 2
 SEQ_LEN = 500
-NUM_EPOCHS = 100
+NUM_EPOCHS = 10
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def make_batch(idx, n, batch_size=1):
     tgt = torch.tensor(FILE[idx:idx+(n*batch_size)]).to(DEVICE)
     tgt = tgt.view(n, batch_size, -1).float()
+    tgt = torch.clamp(torch.round(tgt), 0.0, 1.0)
     seq = tgt.detach().clone()
     seq[torch.randint(0, n, (n//8,))] = 0.0 #-float("inf")
     return tgt[:-1], tgt[1:]
@@ -53,7 +54,8 @@ for e in range(NUM_EPOCHS):
         # action_loss = F.cross_entropy(out[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), torch.argmax(tgt[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), dim=1))
         # value_loss = F.mse_loss(out[:,:,518], tgt[:,:,518])
         # loss = emb_loss + action_loss + value_loss
-        loss = F.l1_loss(out, tgt)
+        # loss = F.l1_loss(out, tgt)
+        loss = F.binary_cross_entropy(torch.sigmoid(out), tgt)
         loss.backward()     
         optim.step()
         train_losses.append(loss.item())
@@ -69,7 +71,8 @@ for e in range(NUM_EPOCHS):
         # test_action_loss.append(action_loss.item())
         # test_value_loss.append(value_loss.item())
         # loss = emb_loss + action_loss + value_loss
-        loss = F.l1_loss(out, tgt)
+        # loss = F.l1_loss(out, tgt)
+        loss = F.binary_cross_entropy(torch.sigmoid(out), tgt)
         test_losses.append(loss.item())
     print("Epoch:", e+1, "\tTrain Loss:", np.mean(train_losses), "\tTotal Test Loss:", np.mean(test_losses))
     # print("Emb Loss:", np.mean(test_emb_loss), "\tAction Loss:", np.mean(test_action_loss), "\tValue Loss:", np.mean(test_value_loss))
