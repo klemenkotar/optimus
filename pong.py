@@ -74,8 +74,8 @@ for e in range(NUM_EPOCHS):
     print("Epoch:", e+1, "\tTrain Loss:", np.mean(train_losses), "\tTotal Test Loss:", np.mean(test_losses))
     # print("Emb Loss:", np.mean(test_emb_loss), "\tAction Loss:", np.mean(test_action_loss), "\tValue Loss:", np.mean(test_value_loss))
 
-seq, tgt = make_batch(900000, SEQ_LEN, batch_size=1)
-out = transfomer(seq, tgt)
+seq, tgt = make_batch(0, SEQ_LEN, batch_size=1)
+out = transfomer(seq)
 plt.figure(1)
 plt.imshow(tgt.squeeze().cpu().detach().numpy().swapaxes(0,1))
 plt.savefig('tgt')
