@@ -7,8 +7,8 @@ import numpy as np
 from tqdm import tqdm
 
 FILE = np.load('data/embeddings.npy')
-BATCH_SIZE = 20
-SEQ_LEN = 100
+BATCH_SIZE = 1
+SEQ_LEN = 1000
 NUM_EPOCHS = 10
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -31,7 +31,9 @@ def generate_batch_indexes(start, stop, step):
     random.shuffle(idxs)
     return idxs
 
-transfomer = nn.Transformer(d_model=528, nhead=16, num_encoder_layers=12).to(DEVICE)
+# transfomer = nn.Transformer(d_model=528, nhead=16, num_encoder_layers=12).to(DEVICE)
+encoder_layers = nn.TransformerEncoderLayer(528, 16, 528, dropout=0.4)
+transfomer = nn.TransformerEncoder(encoder_layers, 12)
 optim = torch.optim.Adam(transfomer.parameters())
 
 for e in range(NUM_EPOCHS):
@@ -45,7 +47,7 @@ for e in range(NUM_EPOCHS):
     for idx in tqdm(generate_batch_indexes(0, 900000, SEQ_LEN * BATCH_SIZE)):
         optim.zero_grad()
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
-        out = transfomer(seq, tgt)
+        out = transfomer(seq)
         # compute the 3 different loss functions
         # emb_loss = F.l1_loss(out[:,:,:512], tgt[:,:,:512])
         # action_loss = F.cross_entropy(out[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), torch.argmax(tgt[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), dim=1))
@@ -58,7 +60,7 @@ for e in range(NUM_EPOCHS):
     print("Testing")
     for idx in tqdm(generate_batch_indexes(900000, 1000000, SEQ_LEN * BATCH_SIZE)):
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
-        out = transfomer(seq, tgt)
+        out = transfomer(seq)
         # compute the 3 different loss functions
         # emb_loss = F.l1_loss(out[:,:,:512], tgt[:,:,:512])
         # action_loss = F.cross_entropy(out[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), torch.argmax(tgt[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), dim=1))
