@@ -32,7 +32,7 @@ def generate_batch_indexes(start, stop, step):
     random.shuffle(idxs)
     return idxs
 
-transfomer = nn.Transformer(d_model=256, nhead=32, num_encoder_layers=24, num_decoder_layers=24, dim_feedforward=4096).to(DEVICE)
+transfomer = nn.Transformer(d_model=256, nhead=32, num_encoder_layers=12).to(DEVICE)
 # encoder_layers = nn.TransformerEncoderLayer(528, 16, 528, dropout=0.4)
 # transfomer = nn.TransformerEncoder(encoder_layers, 12).to(DEVICE)
 optim = torch.optim.Adam(transfomer.parameters())
