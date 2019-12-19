@@ -7,18 +7,18 @@ import numpy as np
 from tqdm import tqdm
 
 FILE = np.load('data/embeddings.npy')
-BATCH_SIZE = 1
-SEQ_LEN = 1000
+BATCH_SIZE = 2
+SEQ_LEN = 500
 NUM_EPOCHS = 50
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def make_batch(idx, n, batch_size=1):
     tgt = torch.tensor(FILE[idx:idx+(n*batch_size)]).to(DEVICE)
-    tgt = tgt.view(n, batch_size, -1).float()[:,:,:256]
+    tgt = tgt.view(n, batch_size, -1).float()[:,:,:128]
     # tgt = torch.clamp(torch.round(tgt), 0.0, 1.0)
     seq = tgt.detach().clone()
     seq[torch.randint(0, n, (n//8,))] = 0.0 #-float("inf")
-    return tgt[:-1], tgt[1:]
+    return seq[:-1], tgt[1:]
 
 def generate_batch_indexes(start, stop, step):
     idxs = []
@@ -32,7 +32,7 @@ def generate_batch_indexes(start, stop, step):
     random.shuffle(idxs)
     return idxs
 
-transfomer = nn.Transformer(d_model=256, nhead=4, num_encoder_layers=12).to(DEVICE)
+transfomer = nn.Transformer(d_model=128, nhead=16, num_encoder_layers=12).to(DEVICE)
 # encoder_layers = nn.TransformerEncoderLayer(528, 16, 528, dropout=0.4)
 # transfomer = nn.TransformerEncoder(encoder_layers, 12).to(DEVICE)
 optim = torch.optim.Adam(transfomer.parameters())
