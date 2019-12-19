@@ -35,7 +35,7 @@ def generate_batch_indexes(start, stop, step):
 transfomer = nn.Transformer(d_model=256, nhead=16, num_encoder_layers=12).to(DEVICE)
 # encoder_layers = nn.TransformerEncoderLayer(528, 16, 528, dropout=0.4)
 # transfomer = nn.TransformerEncoder(encoder_layers, 12).to(DEVICE)
-optim = torch.optim.Adam(transfomer.parameters())
+optim = torch.optim.Adam(transfomer.parameters(), lr=1e-4, weight_decay=0.01)
 
 for e in range(NUM_EPOCHS):
     train_losses = []
