@@ -18,7 +18,7 @@ def make_batch(idx, n, batch_size=1):
     # tgt = torch.clamp(torch.round(tgt), 0.0, 1.0)
     seq = tgt.detach().clone()
     seq[torch.randint(0, n, (n//8,))] = 0.0 #-float("inf")
-    return seq[:-1], tgt[1:]
+    return seq[:-1], tgt[:-1], tgt[1:]
 
 def generate_batch_indexes(start, stop, step):
     idxs = []
@@ -47,8 +47,8 @@ for e in range(NUM_EPOCHS):
     print("Training")
     for idx in tqdm(generate_batch_indexes(0, 90000, SEQ_LEN * BATCH_SIZE)):
         optim.zero_grad()
-        seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
-        out = transfomer(seq, seq)
+        seq, gt, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
+        out = transfomer(seq, gt)
         # compute the 3 different loss functions
         # emb_loss = F.l1_loss(out[:,:,:512], tgt[:,:,:512])
         # action_loss = F.cross_entropy(out[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), torch.argmax(tgt[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), dim=1))
@@ -61,8 +61,8 @@ for e in range(NUM_EPOCHS):
         train_losses.append(loss.item())
     print("Testing")
     for idx in tqdm(generate_batch_indexes(90000, 100000, SEQ_LEN * BATCH_SIZE)):
-        seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
-        out = transfomer(seq, seq)
+        seq, gt, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
+        out = transfomer(seq, gt)
         # compute the 3 different loss functions
         # emb_loss = F.l1_loss(out[:,:,:512], tgt[:,:,:512])
         # action_loss = F.cross_entropy(out[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), torch.argmax(tgt[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), dim=1))
@@ -77,8 +77,8 @@ for e in range(NUM_EPOCHS):
     print("Epoch:", e+1, "\tTrain Loss:", np.mean(train_losses), "\tTotal Test Loss:", np.mean(test_losses))
     # print("Emb Loss:", np.mean(test_emb_loss), "\tAction Loss:", np.mean(test_action_loss), "\tValue Loss:", np.mean(test_value_loss))
 
-seq, tgt = make_batch(0, SEQ_LEN, batch_size=1)
-out = transfomer(seq, seq)
+seq, gt, tgt = make_batch(0, SEQ_LEN, batch_size=1)
+out = transfomer(seq, gt)
 plt.figure(1)
 plt.imshow(tgt.squeeze().cpu().detach().numpy().swapaxes(0,1))
 plt.savefig('tgt')
