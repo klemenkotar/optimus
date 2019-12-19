@@ -31,9 +31,9 @@ def generate_batch_indexes(start, stop, step):
     random.shuffle(idxs)
     return idxs
 
-# transfomer = nn.Transformer(d_model=528, nhead=16, num_encoder_layers=12).to(DEVICE)
-encoder_layers = nn.TransformerEncoderLayer(528, 16, 528, dropout=0.4)
-transfomer = nn.TransformerEncoder(encoder_layers, 12).to(DEVICE)
+transfomer = nn.Transformer(d_model=528, nhead=16, num_encoder_layers=12).to(DEVICE)
+# encoder_layers = nn.TransformerEncoderLayer(528, 16, 528, dropout=0.4)
+# transfomer = nn.TransformerEncoder(encoder_layers, 12).to(DEVICE)
 optim = torch.optim.Adam(transfomer.parameters())
 
 for e in range(NUM_EPOCHS):
@@ -47,7 +47,7 @@ for e in range(NUM_EPOCHS):
     for idx in tqdm(generate_batch_indexes(0, 900000, SEQ_LEN * BATCH_SIZE)):
         optim.zero_grad()
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
-        out = transfomer(seq)
+        out = transfomer(seq, seq)
         # compute the 3 different loss functions
         # emb_loss = F.l1_loss(out[:,:,:512], tgt[:,:,:512])
         # action_loss = F.cross_entropy(out[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), torch.argmax(tgt[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), dim=1))
@@ -60,7 +60,7 @@ for e in range(NUM_EPOCHS):
     print("Testing")
     for idx in tqdm(generate_batch_indexes(900000, 1000000, SEQ_LEN * BATCH_SIZE)):
         seq, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
-        out = transfomer(seq)
+        out = transfomer(seq, seq)
         # compute the 3 different loss functions
         # emb_loss = F.l1_loss(out[:,:,:512], tgt[:,:,:512])
         # action_loss = F.cross_entropy(out[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), torch.argmax(tgt[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), dim=1))
@@ -75,7 +75,7 @@ for e in range(NUM_EPOCHS):
     # print("Emb Loss:", np.mean(test_emb_loss), "\tAction Loss:", np.mean(test_action_loss), "\tValue Loss:", np.mean(test_value_loss))
 
 seq, tgt = make_batch(0, SEQ_LEN, batch_size=1)
-out = transfomer(seq)
+out = transfomer(seq, seq)
 plt.figure(1)
 plt.imshow(tgt.squeeze().cpu().detach().numpy().swapaxes(0,1))
 plt.savefig('tgt')
