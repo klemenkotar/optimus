@@ -64,7 +64,7 @@ for e in range(NUM_EPOCHS):
         out = transfomer(seq, gt)
         # compute the 3 different loss functions
         emb_loss = F.l1_loss(out[:,:,:512], tgt[:,:,:512])
-        action_loss = F.cross_entropy(out[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), torch.argmax(tgt[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), dim=1))
+        action_loss = F.cross_entropy(out[:,:,512:518].view(out.shape[0] * out.shape[1], -1), torch.argmax(tgt[:,:,512:518].view(out.shape[0] * out.shape[1], -1), dim=1))
         value_loss = F.mse_loss(out[:,:,518], tgt[:,:,518])
         loss = emb_loss + action_loss + value_loss
         # loss = F.l1_loss(out, tgt)
@@ -77,7 +77,7 @@ for e in range(NUM_EPOCHS):
         out = transfomer(seq, gt)
         # compute the 3 different loss functions
         emb_loss = F.l1_loss(out[:,:,:512], tgt[:,:,:512])
-        action_loss = F.cross_entropy(out[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), torch.argmax(tgt[:,:,512:518].view(SEQ_LEN*BATCH_SIZE, -1), dim=1))
+        action_loss = F.cross_entropy(out[:,:,512:518].view(out.shape[0] * out.shape[1], -1), torch.argmax(tgt[:,:,512:518].view(out.shape[0] * out.shape[1], -1), dim=1))
         value_loss = F.mse_loss(out[:,:,518], tgt[:,:,518])
         test_emb_loss.append(emb_loss.item())
         test_action_loss.append(action_loss.item())
