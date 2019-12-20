@@ -63,10 +63,10 @@ for e in range(NUM_EPOCHS):
         seq, gt, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
         out = transfomer(seq, gt)
         # compute the 3 different loss functions
-        emb_loss = F.l1_loss(out[:,:,:512], tgt[:,:,:512])
-        action_loss = F.cross_entropy(out[:,:,512:518].view(out.shape[0] * out.shape[1], -1), torch.argmax(tgt[:,:,512:518].view(out.shape[0] * out.shape[1], -1), dim=1))
-        value_loss = F.mse_loss(out[:,:,518], tgt[:,:,518])
-        loss = emb_loss + action_loss + value_loss
+        # emb_loss = F.l1_loss(out[:,:,:512], tgt[:,:,:512])
+        loss = F.cross_entropy(out[:,:,512:518].view(out.shape[0] * out.shape[1], -1), torch.argmax(tgt[:,:,512:518].view(out.shape[0] * out.shape[1], -1), dim=1))
+        # value_loss = F.mse_loss(out[:,:,518], tgt[:,:,518])
+        # loss = emb_loss + action_loss + value_loss
         # loss = F.l1_loss(out, tgt)
         loss.backward()     
         optim.step()
@@ -76,17 +76,17 @@ for e in range(NUM_EPOCHS):
         seq, gt, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
         out = transfomer(seq, gt)
         # compute the 3 different loss functions
-        emb_loss = F.l1_loss(out[:,:,:512], tgt[:,:,:512])
-        action_loss = F.cross_entropy(out[:,:,512:518].view(out.shape[0] * out.shape[1], -1), torch.argmax(tgt[:,:,512:518].view(out.shape[0] * out.shape[1], -1), dim=1))
-        value_loss = F.mse_loss(out[:,:,518], tgt[:,:,518])
-        test_emb_loss.append(emb_loss.item())
-        test_action_loss.append(action_loss.item())
-        test_value_loss.append(value_loss.item())
-        loss = emb_loss + action_loss + value_loss
+        # emb_loss = F.l1_loss(out[:,:,:512], tgt[:,:,:512])
+        loss = F.cross_entropy(out[:,:,512:518].view(out.shape[0] * out.shape[1], -1), torch.argmax(tgt[:,:,512:518].view(out.shape[0] * out.shape[1], -1), dim=1))
+        # value_loss = F.mse_loss(out[:,:,518], tgt[:,:,518])
+        # test_emb_loss.append(emb_loss.item())
+        # test_action_loss.append(action_loss.item())
+        # test_value_loss.append(value_loss.item())
+        # loss = emb_loss + action_loss + value_loss
         # loss = F.l1_loss(out, tgt)
         test_losses.append(loss.item())
     print("Epoch:", e+1, "\tTrain Loss:", np.mean(train_losses), "\tTotal Test Loss:", np.mean(test_losses))
-    print("Emb Loss:", np.mean(test_emb_loss), "\tAction Loss:", np.mean(test_action_loss), "\tValue Loss:", np.mean(test_value_loss))
+    # print("Emb Loss:", np.mean(test_emb_loss), "\tAction Loss:", np.mean(test_action_loss), "\tValue Loss:", np.mean(test_value_loss))
 
 seq, gt, tgt = make_batch(0, SEQ_LEN, batch_size=1)
 out = transfomer(seq, gt)
