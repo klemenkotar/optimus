@@ -11,7 +11,7 @@ from os import path
 FILE = np.load('data/emb256.npy')
 BATCH_SIZE = 50
 SEQ_LEN = 100
-NUM_EPOCHS = 100
+NUM_EPOCHS = 200
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'model256.pt'
 LR = 1e-4
@@ -57,7 +57,7 @@ for e in range(NUM_EPOCHS):
     test_emb_loss = []
     # train
     print("Training")
-    for idx in tqdm(generate_batch_indexes(0, 90000, SEQ_LEN * BATCH_SIZE)):
+    for idx in tqdm(generate_batch_indexes(0, 180000, SEQ_LEN * BATCH_SIZE)):
         optim.zero_grad()
         seq, gt, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
         out = transfomer(seq, gt)
@@ -71,7 +71,7 @@ for e in range(NUM_EPOCHS):
         optim.step()    
         train_losses.append(loss.item())
     print("Testing")
-    for idx in tqdm(generate_batch_indexes(90000, 100000, SEQ_LEN * BATCH_SIZE)):
+    for idx in tqdm(generate_batch_indexes(180000, 200000, SEQ_LEN * BATCH_SIZE)):
         seq, gt, tgt = make_batch(idx, SEQ_LEN, batch_size=BATCH_SIZE)
         out = transfomer(seq, gt)
         # compute the 3 different loss functions
