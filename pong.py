@@ -8,12 +8,12 @@ from tqdm import tqdm
 import atexit
 from os import path
 
-FILE = np.load('data/emb256.npy')
-BATCH_SIZE = 50
+FILE = np.load('data/emb5.npy')
+BATCH_SIZE = 100
 SEQ_LEN = 100
-NUM_EPOCHS = 200
+NUM_EPOCHS = 100
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'model256.pt'
+PATH = 'model5.pt'
 LR = 1e-4
 WEIGHT_DECAY = 0.01
 
@@ -22,8 +22,8 @@ def make_batch(idx, n, batch_size=1):
     tgt = tgt.view(n, batch_size, -1).float()
     # tgt = torch.clamp(torch.round(tgt), 0.0, 1.0)
     seq = tgt.detach().clone()
-    seq[(torch.randint(0, n//2 -1 , (n//8,)) * 2) + 1] = 0.0 #-float("inf")
-    return seq[:-1], tgt[:-1], tgt[1:]
+    # seq[(torch.randint(0, n//2 -1 , (n//8,)) * 2) + 1] = 0.0 #-float("inf")
+    return seq, tgt, tgt
 
 def generate_batch_indexes(start, stop, step):
     idxs = []
@@ -37,7 +37,7 @@ def generate_batch_indexes(start, stop, step):
     random.shuffle(idxs)
     return idxs
 
-transfomer = nn.Transformer(d_model=256, nhead=8, num_encoder_layers=12).to(DEVICE)
+transfomer = nn.Transformer(d_model=128, nhead=8, num_encoder_layers=12).to(DEVICE)
 if path.exists(PATH):
     print("Loading model from", PATH)
     transfomer.load_state_dict(torch.load(PATH))
@@ -91,7 +91,7 @@ seq, gt, tgt = make_batch(0, SEQ_LEN, batch_size=1)
 out = transfomer(seq, gt)
 plt.figure(1)
 plt.imshow(tgt.squeeze().cpu().detach().numpy().swapaxes(0,1))
-plt.savefig('tgt256')
+plt.savefig('tgt5')
 plt.figure(2)
 plt.imshow(out.squeeze().cpu().detach().numpy().swapaxes(0,1))
-plt.savefig('out256')
+plt.savefig('out5')
