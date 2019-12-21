@@ -9,7 +9,7 @@ import atexit
 from os import path
 
 FILE = np.load('data/emb5.npy')
-BATCH_SIZE = 100
+BATCH_SIZE = 50
 SEQ_LEN = 100
 NUM_EPOCHS = 100
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -22,8 +22,8 @@ def make_batch(idx, n, batch_size=1):
     tgt = tgt.view(n, batch_size, -1).float()
     # tgt = torch.clamp(torch.round(tgt), 0.0, 1.0)
     seq = tgt.detach().clone()
-    # seq[(torch.randint(0, n//2 -1 , (n//8,)) * 2) + 1] = 0.0 #-float("inf")
-    return seq, tgt, tgt
+    seq[(torch.randint(0, n//2 -1 , (n//8,)) * 2) + 1] = 0.0 #-float("inf")
+    return seq[:-1], tgt[:-1], tgt[1:]
 
 def generate_batch_indexes(start, stop, step):
     idxs = []
@@ -37,7 +37,7 @@ def generate_batch_indexes(start, stop, step):
     random.shuffle(idxs)
     return idxs
 
-transfomer = nn.Transformer(d_model=128, nhead=8, num_encoder_layers=12).to(DEVICE)
+transfomer = nn.Transformer(d_model=128, nhead=8, num_encoder_layers=12, dropout=0.5).to(DEVICE)
 if path.exists(PATH):
     print("Loading model from", PATH)
     transfomer.load_state_dict(torch.load(PATH))
