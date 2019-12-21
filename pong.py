@@ -66,7 +66,7 @@ for e in range(NUM_EPOCHS):
         # loss = F.cross_entropy(out[:,:,512:518].view(out.shape[0] * out.shape[1], -1), torch.argmax(tgt[:,:,512:518].view(out.shape[0] * out.shape[1], -1), dim=1))
         # value_loss = F.mse_loss(out[:,:,518], tgt[:,:,518])
         # loss = emb_loss + action_loss + value_loss
-        loss = F.l1_loss(out, tgt)
+        loss = F.l1_loss(out[torch.arange((SEQ_LEN-1)//2) * 2, :], tgt[torch.arange((SEQ_LEN-1)//2) * 2, :])
         loss.backward()     
         optim.step()    
         train_losses.append(loss.item())
@@ -82,7 +82,7 @@ for e in range(NUM_EPOCHS):
         # test_action_loss.append(action_loss.item())
         # test_value_loss.append(value_loss.item())
         # loss = emb_loss + action_loss + value_loss
-        loss = F.l1_loss(out, tgt)
+        loss = F.l1_loss(out[torch.arange((SEQ_LEN-1)//2) * 2, :], tgt[torch.arange((SEQ_LEN-1)//2) * 2, :])
         test_losses.append(loss.item())
     print("Epoch:", e+1, "\tTrain Loss:", np.mean(train_losses), "\tTotal Test Loss:", np.mean(test_losses))
     # print("Emb Loss:", np.mean(test_emb_loss), "\tAction Loss:", np.mean(test_action_loss), "\tValue Loss:", np.mean(test_value_loss))
