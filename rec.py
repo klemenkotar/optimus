@@ -10,9 +10,9 @@ from os import path
 import gym
 import cv2
 
-BATCH_SIZE = 16
+BATCH_SIZE = 10
 SEQ_LEN = 100
-NUM_STEPS = 200000
+NUM_STEPS = 30000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec.pt'
 LR = 1e-3
@@ -269,7 +269,7 @@ while step < NUM_STEPS:
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
 tgt = tgt[0]
-out = torch.argmax(out[0].permute(2,3,1), dim=2)
+out = torch.argmax(out[0].permute(1,2,0), dim=2)
 plt.figure(1)
 plt.imshow(tgt.squeeze().cpu().detach().numpy())
 plt.savefig('tgt-model')
