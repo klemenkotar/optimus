@@ -10,11 +10,11 @@ from os import path
 import gym
 import cv2
 
-BATCH_SIZE = 10
+BATCH_SIZE = 5
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-grid.pt'
+PATH = 'models/rec-16.pt'
 LR = 1e-3
 WEIGHT_DECAY = 0.01
 
@@ -300,7 +300,7 @@ tgt = tgt[0]
 out = torch.argmax(out[0].permute(1,2,0), dim=2)
 plt.figure(1)
 plt.imshow(tgt.squeeze().cpu().detach().numpy())
-plt.savefig('tgt-model-grid')
+plt.savefig('tgt-model-16')
 plt.figure(2)
 plt.imshow(out.squeeze().cpu().detach().numpy())
-plt.savefig('out-model-grid')
+plt.savefig('out-model-16')
