@@ -288,7 +288,7 @@ while step < NUM_STEPS:
     train_losses = []
     # train
     print("Training")
-    for idx in tqdm(generate_batch_indexes(0, step, SEQ_LEN)):
+    for idx in tqdm(generate_batch_indexes(step - (SEQ_LEN*10), step, SEQ_LEN)):
         optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
         out = model(seq, act)
