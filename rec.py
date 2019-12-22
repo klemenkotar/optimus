@@ -189,7 +189,7 @@ class MaxAndSkipEnv(gym.Wrapper):
 
 def make_batch(start, n):
     tgt = DATA[idx:idx+n].to(DEVICE)
-    act = ACTIONS[idx:idx+n-1]
+    act = ACTIONS[idx:idx+n-1].to(DEVICE)
     return tgt[:-1], tgt[1:], act
 
 def generate_batch_indexes(start, stop, step):
