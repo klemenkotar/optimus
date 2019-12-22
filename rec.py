@@ -123,8 +123,6 @@ class Reconstruction(nn.Module):
 
         # Deconvolve embeddings
         out = self.deconv(deconv_in)
-        print(out.shape)
-        exit()
         return out
 
 class WarpFrame(gym.ObservationWrapper):
