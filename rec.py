@@ -12,7 +12,7 @@ import cv2
 
 BATCH_SIZE = 16
 SEQ_LEN = 100
-NUM_STEPS = 100000
+NUM_STEPS = 200000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec.pt'
 LR = 1e-3
@@ -30,47 +30,65 @@ class Reconstruction(nn.Module):
             nn.ReLU(),
             nn.Conv2d(32, 64, (4, 4), stride=2),
             nn.ReLU(),
-            nn.Conv2d(64, 256, (4, 4), stride=2),
+            nn.Conv2d(64, 128, (4, 4), stride=2),
             nn.ReLU(),
-            nn.Conv2d(256, 512, (4, 4), stride=2),
+            nn.Conv2d(128, 128, (4, 4), stride=1),
             nn.ReLU(),
-            nn.Conv2d(512, 512, (3, 3)),
+            nn.Conv2d(128, 128, (4, 4), stride=1),
         )
         self.action_encoder = nn.Embedding(32, 128)
         self.transformer = nn.Transformer(d_model=128, nhead=8, num_encoder_layers=12, dropout=0.1)
         self.deconv = nn.Sequential(
-            nn.ConvTranspose2d(640, 256, (4, 4), stride=2),
+            nn.ConvTranspose2d(128, 128, (4, 4), stride=1),
             nn.ReLU(),
-            nn.ConvTranspose2d(256, 256, (4, 4), stride=2),
-            nn.ReLU(),
-            nn.ConvTranspose2d(256, 128, (4, 4), stride=2),
+            nn.ConvTranspose2d(128, 128, (4, 4), stride=1),
             nn.ReLU(),
             nn.ConvTranspose2d(128, 128, (4, 4), stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, (4, 4), stride=2, padding=5),
+            nn.ConvTranspose2d(128, 64, (4, 4), stride=2),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 64, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 64, (4, 4), stride=2),
             nn.ReLU(),
             nn.ConvTranspose2d(64, 256, (1, 1))
         )
 
 
     def forward(self, x, act):
+
+        # Pass inputs through conv
         x = x.unsqueeze(1)
-        x = self.conv(x)
-        x = x.squeeze()
+        x = self.conv(x).squeeze()
+
+        # Convert actions into action embeddings
         act = self.action_encoder(act)
+
+        # Construct transformer sequence from conv outputs
         seq = torch.zeros((x.shape[0]*5, 128)).to(DEVICE)
         for i in range(x.shape[0]):
             idx = i * 5
-            seq[idx] = x[i, :128]
-            seq[idx+1] = x[i, 128:256]
-            seq[idx+2] = x[i, 256:384]
-            seq[idx+3] = x[i, 384:512]
+            seq[idx] = x[i, :, 0, 0]
+            seq[idx+1] = x[i, :, 0, 1]
+            seq[idx+2] = x[i, :, 1, 0]
+            seq[idx+3] = x[i, :, 1, 1]
             seq[idx+4] = act[i]
         seq = seq.unsqueeze(1)
-        out = self.transformer(seq, seq)
-        out = out.squeeze()
-        out = out.view(x.shape[0], 128*5, 1, 1)
-        out = self.deconv(out)
+
+        # Pass sequence through transformer
+        trans_out = self.transformer(seq, seq).squeeze()
+
+        # Construct conv inputs for reconstruction
+        deconv_in = torch.zeros((x.shape[0], 128, 2, 2))
+        for i in range(x.shape[0]):
+            idx = i * 5
+            deconv_in[i, :, 0, 0] = trans_out[idx] * trans_out[idx+4]
+            deconv_in[i, :, 0, 1] = trans_out[idx+1] * trans_out[idx+4]
+            deconv_in[i, :, 1, 0] = trans_out[idx+2] * trans_out[idx+4]
+            deconv_in[i, :, 1, 1] = trans_out[idx+3] * trans_out[idx+4]
+
+        # Deconvolve embeddings
+        out = self.deconv(deconv_in)
         return out
 
 class WarpFrame(gym.ObservationWrapper):
@@ -225,7 +243,7 @@ env.reset()
 step = 0
 while step < NUM_STEPS:
     # Roll out env
-    for i in range(SEQ_LEN * 16):
+    for i in range(SEQ_LEN * 10):
         action = random.randint(0, 5)
         obs, rew, done, _ = env.step(action)
         DATA[step] = torch.tensor(obs.squeeze())
