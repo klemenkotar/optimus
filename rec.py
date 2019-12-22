@@ -14,8 +14,8 @@ BATCH_SIZE = 5
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-16.pt'
-LR = 1e-4
+PATH = 'models/rec-16-onbe-resample.pt'
+LR = 1e-3
 WEIGHT_DECAY = 0.01
 
 DATA = torch.zeros(NUM_STEPS, 84, 84)
@@ -267,7 +267,7 @@ optim = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 def exit_handler():
     print("Saving model as", PATH)
     torch.save(model.state_dict(), PATH)
-# atexit.register(exit_handler)
+atexit.register(exit_handler)
 
 env = gym.make("PongNoFrameskip-v4")
 env = WarpFrame(env, width=84, height=84)
@@ -302,7 +302,7 @@ while step < NUM_STEPS:
     train_losses = []
     print("Training on Old Data")
     ridx = random.randint(0, step-(SEQ_LEN*10))
-    for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN), SEQ_LEN)):
+    for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN)):
         optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
         out = model(seq, act)
