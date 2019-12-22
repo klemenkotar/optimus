@@ -79,7 +79,7 @@ class Reconstruction(nn.Module):
         trans_out = self.transformer(seq, seq).squeeze()
 
         # Construct conv inputs for reconstruction
-        deconv_in = torch.zeros((x.shape[0], 128, 2, 2))
+        deconv_in = torch.zeros((x.shape[0], 128, 2, 2)).to(DEVICE)
         for i in range(x.shape[0]):
             idx = i * 5
             deconv_in[i, :, 0, 0] = trans_out[idx] * trans_out[idx+4]
