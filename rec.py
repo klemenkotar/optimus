@@ -58,7 +58,7 @@ class Reconstruction(nn.Module):
         x = self.conv(x)
         x = x.squeeze()
         act = self.action_encoder(act)
-        seq = torch.zeros((x.shape[0]*5, 128))
+        seq = torch.zeros((x.shape[0]*5, 128)).to(DEVICE)
         for i in range(x.shape[0]):
             idx = i * 5
             seq[idx] = x[i, :128]
