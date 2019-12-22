@@ -41,11 +41,17 @@ class Reconstruction(nn.Module):
         self.deconv = nn.Sequential(
             nn.ConvTranspose2d(128, 128, (4, 4), stride=2),
             nn.ReLU(),
+            nn.ConvTranspose2d(128, 128, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 128, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 128, (4, 4), stride=1),
+            nn.ReLU(),
             nn.ConvTranspose2d(128, 64, (4, 4), stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 64, (4, 4), stride=2),
+            nn.ConvTranspose2d(64, 64, (4, 4), stride=1),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 64, (4, 4), stride=2, padding=5),
+            nn.ConvTranspose2d(64, 64, (4, 4), stride=2, padding=2),
             nn.ReLU(),
             nn.ConvTranspose2d(64, 256, (1, 1))
         )
@@ -117,6 +123,8 @@ class Reconstruction(nn.Module):
 
         # Deconvolve embeddings
         out = self.deconv(deconv_in)
+        print(out.shape)
+        exit()
         return out
 
 class WarpFrame(gym.ObservationWrapper):
