@@ -15,7 +15,7 @@ SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-16.pt'
-LR = 1e-3
+LR = 1e-4
 WEIGHT_DECAY = 0.01
 
 DATA = torch.zeros(NUM_STEPS, 84, 84)
@@ -287,8 +287,22 @@ while step < NUM_STEPS:
             env.reset()
     train_losses = []
     # train
-    print("Training")
+    print("Training on New Data")
     for idx in tqdm(generate_batch_indexes(step - (SEQ_LEN*10), step, SEQ_LEN)):
+        optim.zero_grad()
+        seq, tgt, act = make_batch(idx, SEQ_LEN)
+        out = model(seq, act)
+        out = out.permute(0, 2, 3, 1).reshape(-1, 256)
+        tgt = tgt.view(-1).long()
+        loss = F.cross_entropy(out, tgt)
+        loss.backward()     
+        optim.step()
+        train_losses.append(loss.item())
+    print("Loss:", np.mean(train_losses))
+    train_losses = []
+    print("Training on Old Data")
+    ridx = random.randint(0, step-(SEQ_LEN*10))
+    for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN), SEQ_LEN)):
         optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
         out = model(seq, act)
@@ -306,7 +320,7 @@ tgt = tgt[0]
 out = torch.argmax(out[0].permute(1,2,0), dim=2)
 plt.figure(1)
 plt.imshow(tgt.squeeze().cpu().detach().numpy())
-plt.savefig('tgt-model-16')
+plt.savefig('tgt-model-16-one-repeat')
 plt.figure(2)
 plt.imshow(out.squeeze().cpu().detach().numpy())
-plt.savefig('out-model-16')
+plt.savefig('out-model-16-one-repeat')
