@@ -12,7 +12,7 @@ import cv2
 
 BATCH_SIZE = 10
 SEQ_LEN = 100
-NUM_STEPS = 30000
+NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-grid.pt'
 LR = 1e-3
@@ -26,7 +26,7 @@ class Reconstruction(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(3, 32, (4, 4), stride=2),
+            nn.Conv2d(1, 32, (4, 4), stride=2),
             nn.ReLU(),
             nn.Conv2d(32, 64, (4, 4), stride=2),
             nn.ReLU(),
@@ -34,66 +34,86 @@ class Reconstruction(nn.Module):
             nn.ReLU(),
             nn.Conv2d(128, 128, (4, 4), stride=1),
             nn.ReLU(),
-            nn.Conv2d(128, 128, (4, 4), stride=1),
+            nn.Conv2d(128, 128, (2, 2), stride=1),
         )
         self.action_encoder = nn.Embedding(32, 128)
         self.transformer = nn.Transformer(d_model=128, nhead=8, num_encoder_layers=12, dropout=0.1)
         self.deconv = nn.Sequential(
-            nn.ConvTranspose2d(128, 128, (4, 4), stride=1),
-            nn.ReLU(),
-            nn.ConvTranspose2d(128, 128, (4, 4), stride=1),
-            nn.ReLU(),
             nn.ConvTranspose2d(128, 128, (4, 4), stride=2),
             nn.ReLU(),
             nn.ConvTranspose2d(128, 64, (4, 4), stride=2),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 64, (4, 4), stride=1),
-            nn.ReLU(),
             nn.ConvTranspose2d(64, 64, (4, 4), stride=2),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 64, (4, 4), stride=2, padding=5),
             nn.ReLU(),
             nn.ConvTranspose2d(64, 256, (1, 1))
         )
-        x_grid = np.reshape(np.arange(-1, 1.0001, 2/83), (1, 84))
-        x_grid = torch.tensor(np.repeat(x_grid, 84, axis=0))
-        y_grid = torch.rot90(x_grid, -1)
-        self.grid = torch.stack((torch.zeros_like(x_grid), x_grid, y_grid), axis=0)
+        # x_grid = np.reshape(np.arange(-1, 1.0001, 2/83), (1, 84))
+        # x_grid = torch.tensor(np.repeat(x_grid, 84, axis=0))
+        # y_grid = torch.rot90(x_grid, -1)
+        # self.grid = torch.stack((torch.zeros_like(x_grid), x_grid, y_grid), axis=0)
 
 
     def forward(self, x, act):
 
         # Add grid to input
-        grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
-        grid[:, 0, :, :] = x
+        # grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
+        # grid[:, 0, :, :] = x
 
         # Pass inputs through conv
-        # x = x.unsqueeze(1)
-        x = self.conv(grid).squeeze()
+        x = x.unsqueeze(1)
+        x = self.conv(x).squeeze()
 
         # Convert actions into action embeddings
         act = self.action_encoder(act)
 
         # Construct transformer sequence from conv outputs
-        seq = torch.zeros((x.shape[0]*5, 128)).to(DEVICE)
+        seq = torch.zeros((x.shape[0]*17, 128)).to(DEVICE)
         for i in range(x.shape[0]):
-            idx = i * 5
+            idx = i * 17
             seq[idx] = x[i, :, 0, 0]
             seq[idx+1] = x[i, :, 0, 1]
-            seq[idx+2] = x[i, :, 1, 0]
-            seq[idx+3] = x[i, :, 1, 1]
-            seq[idx+4] = act[i]
+            seq[idx+2] = x[i, :, 0, 2]
+            seq[idx+3] = x[i, :, 0, 3]
+            seq[idx+4] = x[i, :, 1, 0]
+            seq[idx+5] = x[i, :, 1, 1]
+            seq[idx+6] = x[i, :, 1, 2]
+            seq[idx+7] = x[i, :, 1, 3]
+            seq[idx+8] = x[i, :, 2, 0]
+            seq[idx+9] = x[i, :, 2, 1]
+            seq[idx+10] = x[i, :, 2, 2]
+            seq[idx+11] = x[i, :, 2, 3]
+            seq[idx+12] = x[i, :, 3, 0]
+            seq[idx+13] = x[i, :, 3, 1]
+            seq[idx+14] = x[i, :, 3, 2]
+            seq[idx+15] = x[i, :, 3, 3]
+            seq[idx+16] = act[i]
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
         trans_out = self.transformer(seq, seq).squeeze()
 
         # Construct conv inputs for reconstruction
-        deconv_in = torch.zeros((x.shape[0], 128, 2, 2)).to(DEVICE)
+        deconv_in = torch.zeros((x.shape[0], 128, 4, 4)).to(DEVICE)
         for i in range(x.shape[0]):
             idx = i * 5
-            deconv_in[i, :, 0, 0] = trans_out[idx] * trans_out[idx+4]
-            deconv_in[i, :, 0, 1] = trans_out[idx+1] * trans_out[idx+4]
-            deconv_in[i, :, 1, 0] = trans_out[idx+2] * trans_out[idx+4]
-            deconv_in[i, :, 1, 1] = trans_out[idx+3] * trans_out[idx+4]
+            deconv_in[i, :, 0, 0] = trans_out[idx] * trans_out[idx+16]
+            deconv_in[i, :, 0, 1] = trans_out[idx+1] * trans_out[idx+16]
+            deconv_in[i, :, 0, 2] = trans_out[idx+2] * trans_out[idx+16]
+            deconv_in[i, :, 0, 3] = trans_out[idx+3] * trans_out[idx+16]
+            deconv_in[i, :, 1, 0] = trans_out[idx+4] * trans_out[idx+16]
+            deconv_in[i, :, 1, 1] = trans_out[idx+5] * trans_out[idx+16]
+            deconv_in[i, :, 1, 2] = trans_out[idx+6] * trans_out[idx+16]
+            deconv_in[i, :, 1, 3] = trans_out[idx+7] * trans_out[idx+16]
+            deconv_in[i, :, 2, 0] = trans_out[idx+8] * trans_out[idx+16]
+            deconv_in[i, :, 2, 1] = trans_out[idx+9] * trans_out[idx+16]
+            deconv_in[i, :, 2, 2] = trans_out[idx+10] * trans_out[idx+16]
+            deconv_in[i, :, 2, 3] = trans_out[idx+11] * trans_out[idx+16]
+            deconv_in[i, :, 3, 0] = trans_out[idx+12] * trans_out[idx+16]
+            deconv_in[i, :, 3, 1] = trans_out[idx+13] * trans_out[idx+16]
+            deconv_in[i, :, 3, 2] = trans_out[idx+14] * trans_out[idx+16]
+            deconv_in[i, :, 3, 3] = trans_out[idx+15] * trans_out[idx+16]
 
         # Deconvolve embeddings
         out = self.deconv(deconv_in)
@@ -241,7 +261,7 @@ optim = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 def exit_handler():
     print("Saving model as", PATH)
     torch.save(model.state_dict(), PATH)
-atexit.register(exit_handler)
+# atexit.register(exit_handler)
 
 env = gym.make("PongNoFrameskip-v4")
 env = WarpFrame(env, width=84, height=84)
