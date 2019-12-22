@@ -14,7 +14,7 @@ BATCH_SIZE = 10
 SEQ_LEN = 100
 NUM_STEPS = 30000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec.pt'
+PATH = 'models/rec-grid.pt'
 LR = 1e-3
 WEIGHT_DECAY = 0.01
 
@@ -26,7 +26,7 @@ class Reconstruction(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(1, 32, (4, 4), stride=2),
+            nn.Conv2d(3, 32, (4, 4), stride=2),
             nn.ReLU(),
             nn.Conv2d(32, 64, (4, 4), stride=2),
             nn.ReLU(),
@@ -53,13 +53,21 @@ class Reconstruction(nn.Module):
             nn.ReLU(),
             nn.ConvTranspose2d(64, 256, (1, 1))
         )
+        x_grid = np.reshape(np.arange(-1, 1.0001, 2/83), (1, 84))
+        x_grid = torch.tensor(np.repeat(x_grid, 84, axis=0))
+        y_grid = torch.rot90(x_grid, -1)
+        self.grid = torch.stack((torch.zeros_like(x_grid), x_grid, y_grid), axis=0)
 
 
     def forward(self, x, act):
 
+        # Add grid to input
+        grid = self.grid.repeat(x.shape[0], 1, 1, 1).float()
+        grid[:, 0, :, :] = x
+
         # Pass inputs through conv
-        x = x.unsqueeze(1)
-        x = self.conv(x).squeeze()
+        # x = x.unsqueeze(1)
+        x = self.conv(grid).squeeze()
 
         # Convert actions into action embeddings
         act = self.action_encoder(act)
@@ -233,7 +241,7 @@ optim = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 def exit_handler():
     print("Saving model as", PATH)
     torch.save(model.state_dict(), PATH)
-# atexit.register(exit_handler)
+atexit.register(exit_handler)
 
 env = gym.make("PongNoFrameskip-v4")
 env = WarpFrame(env, width=84, height=84)
@@ -272,7 +280,7 @@ tgt = tgt[0]
 out = torch.argmax(out[0].permute(1,2,0), dim=2)
 plt.figure(1)
 plt.imshow(tgt.squeeze().cpu().detach().numpy())
-plt.savefig('tgt-model')
+plt.savefig('tgt-model-grid')
 plt.figure(2)
 plt.imshow(out.squeeze().cpu().detach().numpy())
-plt.savefig('out-model')
+plt.savefig('out-model-grid')
