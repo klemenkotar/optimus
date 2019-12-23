@@ -55,21 +55,21 @@ class Reconstruction(nn.Module):
             nn.ReLU(),
             nn.ConvTranspose2d(64, 256, (1, 1))
         )
-        # x_grid = np.reshape(np.arange(-1, 1.0001, 2/83), (1, 84))
-        # x_grid = torch.tensor(np.repeat(x_grid, 84, axis=0))
-        # y_grid = torch.rot90(x_grid, -1)
-        # self.grid = torch.stack((torch.zeros_like(x_grid), x_grid, y_grid), axis=0)
+        x_grid = np.reshape(np.arange(-1, 1.0001, 2/83), (1, 84))
+        x_grid = torch.tensor(np.repeat(x_grid, 84, axis=0))
+        y_grid = torch.rot90(x_grid, -1)
+        self.grid = torch.stack((torch.zeros_like(x_grid), x_grid, y_grid), axis=0)
 
 
     def forward(self, x, act):
 
-        # Add grid to input
-        # grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
-        # grid[:, 0, :, :] = x
+        Add grid to input
+        grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
+        grid[:, 0, :, :] = x
 
         # Pass inputs through conv
-        x = x.unsqueeze(1)
-        x = self.conv(x).squeeze()
+        # x = x.unsqueeze(1)
+        x = self.conv(grid).squeeze()
 
         # Convert actions into action embeddings
         act = self.action_encoder(act)
