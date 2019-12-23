@@ -10,7 +10,7 @@ from os import path
 import gym
 import cv2
 
-BATCH_SIZE = 4
+BATCH_SIZE = 2
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -41,6 +41,15 @@ class Reconstruction(nn.Module):
             nn.Conv2d(128, 128, (4, 4), stride=2),
             nn.ReLU()
         )
+
+        self.conv1 = nn.Conv2d(3, 64, (4, 4), stride=2, padding=2)
+        self.conv2 = nn.Conv2d(64, 64, (4, 4), stride=1)
+        self.conv3 = nn.Conv2d(64, 128, (4, 4), stride=2)
+        self.conv4 = nn.Conv2d(128, 128, (4, 4), stride=1)
+        self.conv5 = nn.Conv2d(128, 128, (4, 4), stride=1)
+        self.conv6 = nn.Conv2d(128, 128, (4, 4), stride=1)
+        self.conv7 = nn.Conv2d(128, 128, (4, 4), stride=2)
+
         self.action_encoder = nn.Embedding(32, 128)
         self.transformer = nn.Transformer(d_model=128, nhead=8, num_encoder_layers=12, dropout=0.1)
         self.deconv = nn.Sequential(
@@ -60,6 +69,17 @@ class Reconstruction(nn.Module):
             nn.ReLU(),
             nn.ConvTranspose2d(64, 256, (1, 1))
         )
+
+        self.relu = nn.ReLU()
+        self.deconv1 = nn.ConvTranspose2d(128, 128, (4, 4), stride=2)
+        self.deconv2 = nn.ConvTranspose2d(128, 128, (4, 4), stride=1)
+        self.deconv3 = nn.ConvTranspose2d(128, 128, (4, 4), stride=1)
+        self.deconv4 = nn.ConvTranspose2d(128, 128, (4, 4), stride=1)
+        self.deconv5 = nn.ConvTranspose2d(128, 64, (4, 4), stride=2)
+        self.deconv6 = nn.ConvTranspose2d(64, 64, (4, 4), stride=1)
+        self.deconv7 = nn.ConvTranspose2d(64, 64, (4, 4), stride=2, padding=2)
+        self.deconv8 = nn.ConvTranspose2d(64, 256, (1, 1))
+
         x_grid = np.reshape(np.arange(-1, 1.0001, 2/83), (1, 84))
         x_grid = torch.tensor(np.repeat(x_grid, 84, axis=0))
         y_grid = torch.rot90(x_grid, -1)
@@ -74,7 +94,15 @@ class Reconstruction(nn.Module):
 
         # Pass inputs through conv
         # x = x.unsqueeze(1)
-        x = self.conv(grid).squeeze()
+        # x = self.conv(grid).squeeze()
+        conv1_out = self.conv1(grid)
+        conv2_out = self.conv2(conv1_out)
+        conv3_out = self.conv3(conv2_out)
+        conv4_out = self.conv4(conv3_out)
+        conv5_out = self.conv5(conv4_out)
+        conv6_out = self.conv6(conv5_out)
+        conv7_out = self.conv7(conv6_out)
+        x = conv7_out.squeeze()
 
         # Convert actions into action embeddings
         act = self.action_encoder(act)
@@ -127,7 +155,17 @@ class Reconstruction(nn.Module):
             deconv_in[i, :, 3, 3] = trans_out[idx+15] * trans_out[idx+16]
 
         # Deconvolve embeddings
-        out = self.deconv(deconv_in)
+        # out = self.deconv(deconv_in)
+
+        deconv1_out = self.deconv1(deconv_in) + conv6_out
+        deconv2_out = self.deconv2(deconv1_out) + conv5_out
+        deconv3_out = self.deconv3(deconv2_out) + conv4_out
+        deconv4_out = self.deconv4(deconv3_out) + conv3_out
+        deconv5_out = self.deconv5(deconv4_out) + conv2_out
+        deconv6_out = self.deconv6(deconv5_out) + conv1_out
+        deconv7_out = self.deconv7(deconv6_out)
+        out = self.deconv8(deconv7_out)
+
         return out
 
 class WarpFrame(gym.ObservationWrapper):
