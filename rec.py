@@ -16,7 +16,7 @@ NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res.pt'
 LR = 1e-4
-WEIGHT_DECAY = 0.01
+WEIGHT_DECAY = 0.0
 
 DATA = torch.zeros(NUM_STEPS, 84, 84)
 ACTIONS = torch.zeros(NUM_STEPS, 1).long()
@@ -345,7 +345,14 @@ while step < NUM_STEPS:
     train_losses = []
     print("Training on Old Data")
     ridx = random.randint(0, step-(SEQ_LEN*10))
-    for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN)):
+    for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN)):
         optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
         out = model(seq, act)
