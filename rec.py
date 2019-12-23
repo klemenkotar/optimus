@@ -136,7 +136,7 @@ class Reconstruction(nn.Module):
         # Construct conv inputs for reconstruction
         deconv_in = torch.zeros((x.shape[0], 128, 4, 4)).to(DEVICE)
         for i in range(x.shape[0]):
-            idx = i * 5
+            idx = (i * 17) + 0
             deconv_in[i, :, 0, 0] = trans_out[idx] * trans_out[idx+16]
             deconv_in[i, :, 0, 1] = trans_out[idx+1] * trans_out[idx+16]
             deconv_in[i, :, 0, 2] = trans_out[idx+2] * trans_out[idx+16]
