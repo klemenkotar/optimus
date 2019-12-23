@@ -14,7 +14,7 @@ BATCH_SIZE = 2
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec.pt'
+PATH = 'models/rec-res.pt'
 LR = 1e-4
 WEIGHT_DECAY = 0.01
 
@@ -134,9 +134,9 @@ class Reconstruction(nn.Module):
         trans_out = self.transformer(seq, seq).squeeze()
 
         # Construct conv inputs for reconstruction
-        deconv_in = torch.zeros((x.shape[0], 128, 4, 4)).to(DEVICE)
-        for i in range(x.shape[0]):
-            idx = (i * 17) + 0
+        deconv_in = torch.zeros((x.shape[0]-1, 128, 4, 4)).to(DEVICE)
+        for i in range(x.shape[0]-1):
+            idx = (i * 17) + 16
             deconv_in[i, :, 0, 0] = trans_out[idx] * trans_out[idx+16]
             deconv_in[i, :, 0, 1] = trans_out[idx+1] * trans_out[idx+16]
             deconv_in[i, :, 0, 2] = trans_out[idx+2] * trans_out[idx+16]
@@ -157,12 +157,12 @@ class Reconstruction(nn.Module):
         # Deconvolve embeddings
         # out = self.deconv(deconv_in)
 
-        deconv1_out = self.deconv1(deconv_in)# + conv6_out
-        deconv2_out = self.deconv2(deconv1_out)# + conv5_out
-        deconv3_out = self.deconv3(deconv2_out)# + conv4_out
-        deconv4_out = self.deconv4(deconv3_out)# + conv3_out
-        deconv5_out = self.deconv5(deconv4_out)# + conv2_out
-        deconv6_out = self.deconv6(deconv5_out)# + conv1_out
+        deconv1_out = self.deconv1(deconv_in) + conv6_out[:-1]
+        deconv2_out = self.deconv2(deconv1_out) + conv5_out[:-1]
+        deconv3_out = self.deconv3(deconv2_out) + conv4_out[:-1]
+        deconv4_out = self.deconv4(deconv3_out) + conv3_out[:-1]
+        deconv5_out = self.deconv5(deconv4_out) + conv2_out[:-1]
+        deconv6_out = self.deconv6(deconv5_out) + conv1_out[:-1]
         deconv7_out = self.deconv7(deconv6_out)
         out = self.deconv8(deconv7_out)
 
@@ -285,7 +285,7 @@ class MaxAndSkipEnv(gym.Wrapper):
 def make_batch(start, n):
     tgt = DATA[idx:idx+n].to(DEVICE)
     act = ACTIONS[idx:idx+n-1].to(DEVICE)
-    return tgt[:-1], tgt[1:], act
+    return tgt[:-1], tgt[1:-1], act
 
 def generate_batch_indexes(start, stop, step):
     idxs = []
@@ -363,7 +363,7 @@ tgt = tgt[0]
 out = torch.argmax(out[0].permute(1,2,0), dim=2)
 plt.figure(1)
 plt.imshow(tgt.squeeze().cpu().detach().numpy())
-plt.savefig('tgt-rec')
+plt.savefig('tgt-rec-res')
 plt.figure(2)
 plt.imshow(out.squeeze().cpu().detach().numpy())
-plt.savefig('out-rec')
+plt.savefig('out-rec-res')
