@@ -14,7 +14,7 @@ BATCH_SIZE = 2
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-res.pt'
+PATH = 'models/rec.pt'
 LR = 1e-4
 WEIGHT_DECAY = 0.01
 
@@ -157,12 +157,12 @@ class Reconstruction(nn.Module):
         # Deconvolve embeddings
         # out = self.deconv(deconv_in)
 
-        deconv1_out = self.deconv1(deconv_in) + conv6_out
-        deconv2_out = self.deconv2(deconv1_out) + conv5_out
-        deconv3_out = self.deconv3(deconv2_out) + conv4_out
-        deconv4_out = self.deconv4(deconv3_out) + conv3_out
-        deconv5_out = self.deconv5(deconv4_out) + conv2_out
-        deconv6_out = self.deconv6(deconv5_out) + conv1_out
+        deconv1_out = self.deconv1(deconv_in)# + conv6_out
+        deconv2_out = self.deconv2(deconv1_out)# + conv5_out
+        deconv3_out = self.deconv3(deconv2_out)# + conv4_out
+        deconv4_out = self.deconv4(deconv3_out)# + conv3_out
+        deconv5_out = self.deconv5(deconv4_out)# + conv2_out
+        deconv6_out = self.deconv6(deconv5_out)# + conv1_out
         deconv7_out = self.deconv7(deconv6_out)
         out = self.deconv8(deconv7_out)
 
@@ -363,7 +363,7 @@ tgt = tgt[0]
 out = torch.argmax(out[0].permute(1,2,0), dim=2)
 plt.figure(1)
 plt.imshow(tgt.squeeze().cpu().detach().numpy())
-plt.savefig('tgt-rec-res')
+plt.savefig('tgt-rec')
 plt.figure(2)
 plt.imshow(out.squeeze().cpu().detach().numpy())
-plt.savefig('out-rec-res')
+plt.savefig('out-rec')
