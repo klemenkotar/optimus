@@ -63,7 +63,7 @@ class Reconstruction(nn.Module):
 
     def forward(self, x, act):
 
-        Add grid to input
+        # Add grid to input
         grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
         grid[:, 0, :, :] = x
 
