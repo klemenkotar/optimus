@@ -14,7 +14,7 @@ BATCH_SIZE = 4
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-16-onbe-resample-grid.pt'
+PATH = 'models/rec-16-one-resample-grid.pt'
 LR = 1e-3
 WEIGHT_DECAY = 0.01
 
