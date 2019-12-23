@@ -10,7 +10,7 @@ from os import path
 import gym
 import cv2
 
-BATCH_SIZE = 5
+BATCH_SIZE = 4
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -26,15 +26,20 @@ class Reconstruction(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(3, 32, (4, 4), stride=2),
+            nn.Conv2d(3, 64, (4, 4), stride=2, padding=2),
             nn.ReLU(),
-            nn.Conv2d(32, 64, (4, 4), stride=2),
+            nn.Conv2d(64, 64, (4, 4), stride=1),
             nn.ReLU(),
             nn.Conv2d(64, 128, (4, 4), stride=2),
             nn.ReLU(),
             nn.Conv2d(128, 128, (4, 4), stride=1),
             nn.ReLU(),
-            nn.Conv2d(128, 128, (2, 2), stride=1),
+            nn.Conv2d(128, 128, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, (4, 4), stride=2),
+            nn.ReLU()
         )
         self.action_encoder = nn.Embedding(32, 128)
         self.transformer = nn.Transformer(d_model=128, nhead=8, num_encoder_layers=12, dropout=0.1)
@@ -267,7 +272,7 @@ optim = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 def exit_handler():
     print("Saving model as", PATH)
     torch.save(model.state_dict(), PATH)
-atexit.register(exit_handler)
+#atexit.register(exit_handler)
 
 env = gym.make("PongNoFrameskip-v4")
 env = WarpFrame(env, width=84, height=84)
@@ -302,7 +307,7 @@ while step < NUM_STEPS:
     train_losses = []
     print("Training on Old Data")
     ridx = random.randint(0, step-(SEQ_LEN*10))
-    for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN)):
+    for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN)):
         optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
         out = model(seq, act)
