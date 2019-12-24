@@ -85,6 +85,8 @@ class Reconstruction(nn.Module):
         y_grid = torch.rot90(x_grid, -1)
         self.grid = torch.stack((torch.zeros_like(x_grid), x_grid, y_grid), axis=0)
 
+        self.big_to_smol = nn.Linear(128, 64)
+
 
     def forward(self, x, act):
 
@@ -158,6 +160,7 @@ class Reconstruction(nn.Module):
         # out = self.deconv(deconv_in)
 
         act_emb = trans_out[torch.arange(x.shape[0]-1)*17 + 16]
+        smol_emb = self.big_to_smol(act_emb)
 
         deconv1_out = (self.deconv1(deconv_in) + conv6_out[:-1])
         deconv1_out *= act_emb.repeat(1, deconv1_out.shape[2] * deconv1_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv1_out.shape[2], deconv1_out.shape[3])
@@ -167,8 +170,10 @@ class Reconstruction(nn.Module):
         deconv3_out *= act_emb.repeat(1, deconv3_out.shape[2] * deconv3_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv3_out.shape[2], deconv3_out.shape[3])
         deconv4_out = (self.deconv4(deconv3_out) + conv3_out[:-1])
         deconv4_out *= act_emb.repeat(1, deconv4_out.shape[2] * deconv4_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv4_out.shape[2], deconv4_out.shape[3])
-        deconv5_out = (self.deconv5(deconv4_out) + conv2_out[:-1]) 
+        deconv5_out = (self.deconv5(deconv4_out) + conv2_out[:-1])
+        deconv5_out *= smol_emb.repeat(1, deconv5_out.shape[2] * deconv5_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv5_out.shape[2], deconv5_out.shape[3])
         deconv6_out = (self.deconv6(deconv5_out) + conv1_out[:-1])
+        deconv6_out *= smol_emb.repeat(1, deconv6_out.shape[2] * deconv6_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv6_out.shape[2], deconv6_out.shape[3])
         deconv7_out = (self.deconv7(deconv6_out))
         out = self.deconv8(deconv7_out)
 
