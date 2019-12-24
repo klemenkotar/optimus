@@ -10,7 +10,7 @@ from os import path
 import gym
 import cv2
 
-BATCH_SIZE = 2
+BATCH_SIZE = 1
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -157,13 +157,19 @@ class Reconstruction(nn.Module):
         # Deconvolve embeddings
         # out = self.deconv(deconv_in)
 
-        deconv1_out = self.deconv1(deconv_in) + conv6_out[:-1]
-        deconv2_out = self.deconv2(deconv1_out) + conv5_out[:-1]
-        deconv3_out = self.deconv3(deconv2_out) + conv4_out[:-1]
-        deconv4_out = self.deconv4(deconv3_out) + conv3_out[:-1]
-        deconv5_out = self.deconv5(deconv4_out) + conv2_out[:-1]
-        deconv6_out = self.deconv6(deconv5_out) + conv1_out[:-1]
-        deconv7_out = self.deconv7(deconv6_out)
+        act_emb = trans_out[torch.arange(x.shape[0]-1)*17 + 16]
+
+        deconv1_out = (self.deconv1(deconv_in) + conv6_out[:-1])
+        deconv1_out *= act_emb.repeat(1, deconv1_out.shape[2] * deconv1_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv1_out.shape[2], deconv1_out.shape[3])
+        deconv2_out = (self.deconv2(deconv1_out) + conv5_out[:-1])
+        deconv2_out *= act_emb.repeat(1, deconv2_out.shape[2] * deconv2_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv2_out.shape[2], deconv2_out.shape[3])
+        deconv3_out = (self.deconv3(deconv2_out) + conv4_out[:-1])
+        deconv3_out *= act_emb.repeat(1, deconv3_out.shape[2] * deconv3_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv3_out.shape[2], deconv3_out.shape[3])
+        deconv4_out = (self.deconv4(deconv3_out) + conv3_out[:-1])
+        deconv4_out *= act_emb.repeat(1, deconv4_out.shape[2] * deconv4_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv4_out.shape[2], deconv4_out.shape[3])
+        deconv5_out = (self.deconv5(deconv4_out) + conv2_out[:-1]) 
+        deconv6_out = (self.deconv6(deconv5_out) + conv1_out[:-1])
+        deconv7_out = (self.deconv7(deconv6_out))
         out = self.deconv8(deconv7_out)
 
         return out
@@ -348,6 +354,12 @@ while step < NUM_STEPS:
     for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
