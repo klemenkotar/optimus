@@ -337,7 +337,7 @@ for i in range(20):
     print("ROLLING OUT FRAME", i+1)
     out = model(DATA, ACTIONS)
     out = torch.argmax(out.permute(0,2,3,1), dim=3)
-    DATA[:-1] = DATA[1:]
+    DATA[:-1] = DATA[1:].clone()
     DATA[-1] = out[-1]
     out = out[-1]
     # plt.figure(i)
