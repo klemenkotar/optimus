@@ -14,8 +14,8 @@ SEQ_LEN = 40
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res.pt'
 
-DATA = torch.zeros(5, 84, 84, device=DEVICE)
-ACTIONS = torch.zeros(5, 1, device=DEVICE, dtype=torch.long)
+DATA = torch.zeros(40, 84, 84, device=DEVICE)
+ACTIONS = torch.zeros(40, 1, device=DEVICE, dtype=torch.long)
 
 class Reconstruction(nn.Module):
 
@@ -323,7 +323,7 @@ env.reset()
 step = 0
 
 # Roll out env
-for i in range(5):
+for i in range(40):
     action = random.randint(0, 5)
     obs, rew, done, _ = env.step(action)
     DATA[step] = torch.tensor(obs.squeeze())
