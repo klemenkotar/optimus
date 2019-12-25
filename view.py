@@ -9,6 +9,8 @@ import atexit
 from os import path
 import gym
 import cv2
+from PIL import Image
+import glob
 
 SEQ_LEN =30
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -333,7 +335,7 @@ for i in range(30):
     if done:
         env.reset()
 
-
+# Roll out env'
 for i in range(20):
     print("ROLLING OUT FRAME", i+1)
     out = model(DATA, ACTIONS)
@@ -341,21 +343,18 @@ for i in range(20):
     DATA[:-1] = DATA[1:].clone()
     DATA[-1] = out[-1]
     out = out[-1]
-    # plt.figure(i)
     plt.imshow(out.squeeze().cpu().detach().numpy())
     plt.savefig('frames/frame' + str(i))
-    # out = out.permute(0, 2, 3, 1).reshape(-1, 256)
-    # tgt = tgt.view(-1).long()
-    # loss = F.cross_entropy(out, tgt)
-    # print("Loss:", loss.item()))
-plt.show()
 
-# seq, tgt, act = make_batch(idx, SEQ_LEN)
-# out = model(seq, act)
-# tgt = tgt[0]
-# out = torch.argmax(out[0].permute(1,2,0), dim=2)
-# plt.figure(1)
-# plt.imshow(tgt.squeeze().cpu().detach().numpy())
-# plt.figure(2)
-# plt.imshow(out.squeeze().cpu().detach().numpy())
-# plt.show()
+# Create the frames
+frames = []
+imgs = glob.glob("frames/*.png")
+for i in imgs:
+    new_frame = Image.open(i)
+    frames.append(new_frame)
+ 
+# Save into a GIF file that loops forever
+frames[0].save('frames/frames.gif', format='GIF',
+               append_images=frames[1:],
+               save_all=True,
+               duration=300, loop=0)
