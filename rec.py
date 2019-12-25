@@ -11,7 +11,7 @@ import gym
 import cv2
 
 BATCH_SIZE = 1
-SEQ_LEN = 100
+SEQ_LEN = 30
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res.pt'
@@ -133,12 +133,15 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        trans_out = self.transformer(seq, seq).squeeze()
+        for _ in range(17):
+            seq = self.transformer(seq, seq)
+        seq[-1] = act[-1]
+        trans_out = seq.squeeze()
 
         # Construct conv inputs for reconstruction
-        deconv_in = torch.zeros((x.shape[0]-1, 128, 4, 4)).to(DEVICE)
-        for i in range(x.shape[0]-1):
-            idx = (i * 17) + 16
+        deconv_in = torch.zeros((x.shape[0], 128, 4, 4)).to(DEVICE)
+        for i in range(x.shape[0]):
+            idx = (i * 17)
             deconv_in[i, :, 0, 0] = trans_out[idx] * trans_out[idx+16]
             deconv_in[i, :, 0, 1] = trans_out[idx+1] * trans_out[idx+16]
             deconv_in[i, :, 0, 2] = trans_out[idx+2] * trans_out[idx+16]
@@ -159,20 +162,20 @@ class Reconstruction(nn.Module):
         # Deconvolve embeddings
         # out = self.deconv(deconv_in)
 
-        act_emb = trans_out[torch.arange(x.shape[0]-1)*17 + 16]
+        act_emb = trans_out[torch.arange(x.shape[0])*17]
         smol_emb = self.big_to_smol(act_emb)
 
-        deconv1_out = (self.deconv1(deconv_in) + conv6_out[:-1])
+        deconv1_out = (self.deconv1(deconv_in) + conv6_out)
         deconv1_out *= act_emb.repeat(1, deconv1_out.shape[2] * deconv1_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv1_out.shape[2], deconv1_out.shape[3])
-        deconv2_out = (self.deconv2(deconv1_out) + conv5_out[:-1])
+        deconv2_out = (self.deconv2(deconv1_out) + conv5_out)
         deconv2_out *= act_emb.repeat(1, deconv2_out.shape[2] * deconv2_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv2_out.shape[2], deconv2_out.shape[3])
-        deconv3_out = (self.deconv3(deconv2_out) + conv4_out[:-1])
+        deconv3_out = (self.deconv3(deconv2_out) + conv4_out)
         deconv3_out *= act_emb.repeat(1, deconv3_out.shape[2] * deconv3_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv3_out.shape[2], deconv3_out.shape[3])
-        deconv4_out = (self.deconv4(deconv3_out) + conv3_out[:-1])
+        deconv4_out = (self.deconv4(deconv3_out) + conv3_out)
         deconv4_out *= act_emb.repeat(1, deconv4_out.shape[2] * deconv4_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv4_out.shape[2], deconv4_out.shape[3])
-        deconv5_out = (self.deconv5(deconv4_out) + conv2_out[:-1])
+        deconv5_out = (self.deconv5(deconv4_out) + conv2_out)
         deconv5_out *= smol_emb.repeat(1, deconv5_out.shape[2] * deconv5_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv5_out.shape[2], deconv5_out.shape[3])
-        deconv6_out = (self.deconv6(deconv5_out) + conv1_out[:-1])
+        deconv6_out = (self.deconv6(deconv5_out) + conv1_out)
         deconv6_out *= smol_emb.repeat(1, deconv6_out.shape[2] * deconv6_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv6_out.shape[2], deconv6_out.shape[3])
         deconv7_out = (self.deconv7(deconv6_out))
         out = self.deconv8(deconv7_out)
@@ -295,8 +298,8 @@ class MaxAndSkipEnv(gym.Wrapper):
 
 def make_batch(start, n):
     tgt = DATA[idx:idx+n].to(DEVICE)
-    act = ACTIONS[idx:idx+n-1].to(DEVICE)
-    return tgt[:-1], tgt[1:-1], act
+    act = ACTIONS[idx:idx+n].to(DEVICE)
+    return tgt[:-1], tgt[1:], act
 
 def generate_batch_indexes(start, stop, step):
     idxs = []
