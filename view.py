@@ -10,12 +10,12 @@ from os import path
 import gym
 import cv2
 
-SEQ_LEN = 50
+SEQ_LEN = 100
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res.pt'
 
-DATA = torch.zeros(50, 84, 84)
-ACTIONS = torch.zeros(50, 1).long()
+DATA = torch.zeros(100, 84, 84)
+ACTIONS = torch.zeros(100, 1).long()
 
 class Reconstruction(nn.Module):
 
@@ -323,7 +323,7 @@ env.reset()
 step = 0
 
 # Roll out env
-for i in range(50):
+for i in range(100):
     action = random.randint(0, 5)
     obs, rew, done, _ = env.step(action)
     DATA[step] = torch.tensor(obs.squeeze())
@@ -335,6 +335,7 @@ for i in range(50):
 # train
 print("Training on New Data")
 for i in range(20):
+    print("ROLLING OUT FRAME", i+1)
     out = model(DATA.to(DEVICE), ACTIONS.to(DEVICE))
     out = torch.argmax(out.permute(0,2,3,1), dim=3)
     DATA = out
