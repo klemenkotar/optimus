@@ -10,7 +10,7 @@ from os import path
 import gym
 import cv2
 
-SEQ_LEN = 5
+SEQ_LEN = 40
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res.pt'
 
