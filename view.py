@@ -335,7 +335,7 @@ for i in range(100):
 # train
 print("Training on New Data")
 for i in range(20):
-    out = model(DATA.to(device), ACTIONS.to(device))
+    out = model(DATA.to(DEVICE), ACTIONS.to(DEVICE))
     out = torch.argmax(out.permute(0,2,3,1), dim=3)
     DATA = out
     out = out[-1]
