@@ -10,12 +10,12 @@ from os import path
 import gym
 import cv2
 
-SEQ_LEN = 40
+SEQ_LEN =30
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res.pt'
 
-DATA = torch.zeros(40, 84, 84, device=DEVICE)
-ACTIONS = torch.zeros(40, 1, device=DEVICE, dtype=torch.long)
+DATA = torch.zeros(30, 84, 84, device=DEVICE)
+ACTIONS = torch.zeros(30, 1, device=DEVICE, dtype=torch.long)
 
 class Reconstruction(nn.Module):
 
@@ -300,7 +300,8 @@ def generate_batch_indexes(start, stop, step):
     idxs = []
     idx = start
     while idx < stop:
-        tidx = idx + random.randint(-1000, 1000)
+        tidx = idx + random.randint(-
+        0, 100040)
         tidx = max(0, tidx)
         tidx = min(stop-step, tidx)
         idxs.append(tidx)
@@ -323,7 +324,7 @@ env.reset()
 step = 0
 
 # Roll out env
-for i in range(40):
+for i in range(30):
     action = random.randint(0, 5)
     obs, rew, done, _ = env.step(action)
     DATA[step] = torch.tensor(obs.squeeze())
