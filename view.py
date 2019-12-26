@@ -12,12 +12,12 @@ import cv2
 from PIL import Image
 import glob
 
-SEQ_LEN =30
+SEQ_LEN = 100
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res.pt'
 
-DATA = torch.zeros(30, 84, 84, device=DEVICE)
-ACTIONS = torch.zeros(30, 1, device=DEVICE, dtype=torch.long)
+DATA = torch.zeros(100, 84, 84, device=DEVICE)
+ACTIONS = torch.zeros(100, 1, device=DEVICE, dtype=torch.long)
 
 class Reconstruction(nn.Module):
 
@@ -37,6 +37,8 @@ class Reconstruction(nn.Module):
             nn.Conv2d(128, 128, (4, 4), stride=1),
             nn.ReLU(),
             nn.Conv2d(128, 128, (4, 4), stride=2),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, (4, 4), stride=1),
             nn.ReLU()
         )
 
@@ -47,6 +49,7 @@ class Reconstruction(nn.Module):
         self.conv5 = nn.Conv2d(128, 128, (4, 4), stride=1)
         self.conv6 = nn.Conv2d(128, 128, (4, 4), stride=1)
         self.conv7 = nn.Conv2d(128, 128, (4, 4), stride=2)
+        self.conv8 = nn.Conv2d(128, 128, (2, 2), stride=2)
 
         self.action_encoder = nn.Embedding(32, 128)
         self.transformer = nn.Transformer(d_model=128, nhead=8, num_encoder_layers=12, dropout=0.1)
@@ -69,14 +72,15 @@ class Reconstruction(nn.Module):
         )
 
         self.relu = nn.ReLU()
-        self.deconv1 = nn.ConvTranspose2d(128, 128, (4, 4), stride=2)
-        self.deconv2 = nn.ConvTranspose2d(128, 128, (4, 4), stride=1)
+        self.deconv1 = nn.ConvTranspose2d(128, 128, (2, 2), stride=2)
+        self.deconv2 = nn.ConvTranspose2d(128, 128, (4, 4), stride=2)
         self.deconv3 = nn.ConvTranspose2d(128, 128, (4, 4), stride=1)
         self.deconv4 = nn.ConvTranspose2d(128, 128, (4, 4), stride=1)
-        self.deconv5 = nn.ConvTranspose2d(128, 64, (4, 4), stride=2)
-        self.deconv6 = nn.ConvTranspose2d(64, 64, (4, 4), stride=1)
-        self.deconv7 = nn.ConvTranspose2d(64, 64, (4, 4), stride=2, padding=2)
-        self.deconv8 = nn.ConvTranspose2d(64, 256, (1, 1))
+        self.deconv5 = nn.ConvTranspose2d(128, 128, (4, 4), stride=1)
+        self.deconv6 = nn.ConvTranspose2d(128, 64, (4, 4), stride=2)
+        self.deconv7 = nn.ConvTranspose2d(64, 64, (4, 4), stride=1)
+        self.deconv8 = nn.ConvTranspose2d(64, 64, (4, 4), stride=2, padding=2)
+        self.deconv9 = nn.ConvTranspose2d(64, 256, (1, 1))
 
         x_grid = np.reshape(np.arange(-1, 1.0001, 2/83), (1, 84))
         x_grid = torch.tensor(np.repeat(x_grid, 84, axis=0))
@@ -108,74 +112,53 @@ class Reconstruction(nn.Module):
         act = self.action_encoder(act)
 
         # Construct transformer sequence from conv outputs
-        seq = torch.zeros((x.shape[0]*17, 128)).to(DEVICE)
+        seq = torch.zeros((x.shape[0]*5, 128)).to(DEVICE)
         for i in range(x.shape[0]):
-            idx = i * 17
+            idx = i * 5
             seq[idx] = x[i, :, 0, 0]
             seq[idx+1] = x[i, :, 0, 1]
-            seq[idx+2] = x[i, :, 0, 2]
-            seq[idx+3] = x[i, :, 0, 3]
-            seq[idx+4] = x[i, :, 1, 0]
-            seq[idx+5] = x[i, :, 1, 1]
-            seq[idx+6] = x[i, :, 1, 2]
-            seq[idx+7] = x[i, :, 1, 3]
-            seq[idx+8] = x[i, :, 2, 0]
-            seq[idx+9] = x[i, :, 2, 1]
-            seq[idx+10] = x[i, :, 2, 2]
-            seq[idx+11] = x[i, :, 2, 3]
-            seq[idx+12] = x[i, :, 3, 0]
-            seq[idx+13] = x[i, :, 3, 1]
-            seq[idx+14] = x[i, :, 3, 2]
-            seq[idx+15] = x[i, :, 3, 3]
-            seq[idx+16] = act[i]
+            seq[idx+2] = x[i, :, 1, 0]
+            seq[idx+3] = x[i, :, 1, 1]
+            seq[idx+4] = act[i]
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        for _ in range(17):
+        for _ in range(1):
             seq = self.transformer(seq, seq)
+        seq[-1] = act[-1]
         trans_out = seq.squeeze()
 
         # Construct conv inputs for reconstruction
-        deconv_in = torch.zeros((x.shape[0], 128, 4, 4)).to(DEVICE)
+        deconv_in = torch.zeros((x.shape[0], 128, 2, 2)).to(DEVICE)
         for i in range(x.shape[0]):
-            idx = (i * 17)
-            deconv_in[i, :, 0, 0] = trans_out[idx] * trans_out[idx+16]
-            deconv_in[i, :, 0, 1] = trans_out[idx+1] * trans_out[idx+16]
-            deconv_in[i, :, 0, 2] = trans_out[idx+2] * trans_out[idx+16]
-            deconv_in[i, :, 0, 3] = trans_out[idx+3] * trans_out[idx+16]
-            deconv_in[i, :, 1, 0] = trans_out[idx+4] * trans_out[idx+16]
-            deconv_in[i, :, 1, 1] = trans_out[idx+5] * trans_out[idx+16]
-            deconv_in[i, :, 1, 2] = trans_out[idx+6] * trans_out[idx+16]
-            deconv_in[i, :, 1, 3] = trans_out[idx+7] * trans_out[idx+16]
-            deconv_in[i, :, 2, 0] = trans_out[idx+8] * trans_out[idx+16]
-            deconv_in[i, :, 2, 1] = trans_out[idx+9] * trans_out[idx+16]
-            deconv_in[i, :, 2, 2] = trans_out[idx+10] * trans_out[idx+16]
-            deconv_in[i, :, 2, 3] = trans_out[idx+11] * trans_out[idx+16]
-            deconv_in[i, :, 3, 0] = trans_out[idx+12] * trans_out[idx+16]
-            deconv_in[i, :, 3, 1] = trans_out[idx+13] * trans_out[idx+16]
-            deconv_in[i, :, 3, 2] = trans_out[idx+14] * trans_out[idx+16]
-            deconv_in[i, :, 3, 3] = trans_out[idx+15] * trans_out[idx+16]
+            idx = (i * 5)
+            deconv_in[i, :, 0, 0] = trans_out[idx] #* trans_out[idx+4]
+            deconv_in[i, :, 0, 1] = trans_out[idx+1] #* trans_out[idx+4]
+            deconv_in[i, :, 1, 0] = trans_out[idx+2] #* trans_out[idx+4]
+            deconv_in[i, :, 1, 1] = trans_out[idx+3] #* trans_out[idx+4]
 
         # Deconvolve embeddings
         # out = self.deconv(deconv_in)
 
-        act_emb = trans_out[torch.arange(x.shape[0])*17]
+        act_emb = trans_out[torch.arange(x.shape[0])*5]
         smol_emb = self.big_to_smol(act_emb)
 
-        deconv1_out = (self.deconv1(deconv_in) + conv6_out)
+        deconv1_out = (self.deconv1(deconv_in) + conv7_out)
         deconv1_out *= act_emb.repeat(1, deconv1_out.shape[2] * deconv1_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv1_out.shape[2], deconv1_out.shape[3])
-        deconv2_out = (self.deconv2(deconv1_out) + conv5_out)
+        deconv2_out = (self.deconv2(deconv1_out) + conv6_out)
         deconv2_out *= act_emb.repeat(1, deconv2_out.shape[2] * deconv2_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv2_out.shape[2], deconv2_out.shape[3])
-        deconv3_out = (self.deconv3(deconv2_out) + conv4_out)
+        deconv3_out = (self.deconv3(deconv2_out) + conv5_out)
         deconv3_out *= act_emb.repeat(1, deconv3_out.shape[2] * deconv3_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv3_out.shape[2], deconv3_out.shape[3])
-        deconv4_out = (self.deconv4(deconv3_out) + conv3_out)
+        deconv4_out = (self.deconv4(deconv3_out) + conv4_out)
         deconv4_out *= act_emb.repeat(1, deconv4_out.shape[2] * deconv4_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv4_out.shape[2], deconv4_out.shape[3])
-        deconv5_out = (self.deconv5(deconv4_out) + conv2_out)
-        deconv5_out *= smol_emb.repeat(1, deconv5_out.shape[2] * deconv5_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv5_out.shape[2], deconv5_out.shape[3])
-        deconv6_out = (self.deconv6(deconv5_out) + conv1_out)
+        deconv5_out = (self.deconv5(deconv4_out) + conv3_out)
+        deconv5_out *= act_emb.repeat(1, deconv5_out.shape[2] * deconv5_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv5_out.shape[2], deconv5_out.shape[3])
+        deconv6_out = (self.deconv6(deconv5_out) + conv2_out)
         deconv6_out *= smol_emb.repeat(1, deconv6_out.shape[2] * deconv6_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv6_out.shape[2], deconv6_out.shape[3])
-        deconv7_out = (self.deconv7(deconv6_out))
-        out = self.deconv8(deconv7_out)
+        deconv7_out = (self.deconv7(deconv6_out) + conv1_out)
+        deconv7_out *= smol_emb.repeat(1, deconv7_out.shape[2] * deconv7_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv7_out.shape[2], deconv7_out.shape[3])
+        deconv8_out = (self.deconv8(deconv7_out))
+        out = self.deconv9(deconv8_out)
 
         return out
 
@@ -326,7 +309,7 @@ env.reset()
 step = 0
 
 # Roll out env
-for i in range(30):
+for i in range(100):
     action = random.randint(0, 5)
     obs, rew, done, _ = env.step(action)
     DATA[step] = torch.tensor(obs.squeeze())
@@ -336,7 +319,7 @@ for i in range(30):
         env.reset()
 
 # Roll out env'
-for i in range(20):
+for i in range(30):
     print("ROLLING OUT FRAME", i+1)
     out = model(DATA, ACTIONS)
     out = torch.argmax(out.permute(0,2,3,1), dim=3)
