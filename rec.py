@@ -11,7 +11,7 @@ import gym
 import cv2
 
 BATCH_SIZE = 1
-SEQ_LEN = 100
+SEQ_LEN = 50
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res-2x2.pt'
@@ -125,7 +125,7 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        for x in range(1):
+        for x in range(5):
             seq = self.transformer(seq, seq)
         seq[-1] = act[-1]
         trans_out = seq.squeeze()
