@@ -91,8 +91,33 @@ class Reconstruction(nn.Module):
 
         self.big_to_smol = nn.Linear(128, 64)
 
+        self.embeddings = None
 
-    def forward(self, x, act):
+        self.optim = torch.optim.Adam(self.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+
+
+    def train_embeddings(self, epochs=10, seq_len=100):
+
+        if self.embeddings is None:
+            print("There are no embeddings!")
+            return
+
+        losses = []
+        for e in tqdm(range(epochs)):
+            self.optim.zero_grad()
+            ridx = random.randint(0, self.embeddings.shape[0] - seq_len)
+            seq = self.embeddings[ridx:ridx+seq_len]
+            tgt = seq.clone()
+            seq[torch.randint(0, seq.shape[0], (seq.shape[0]//8))] *= 0.0
+            out = self.transformer(seq[:-1], tgt[:-1])
+            loss = F.l1_loss(out, tgt[1:])
+            loss.backward()
+            losses.append(loss.item())
+            self.optim.step()
+        print("Embeddings loss:", np.mean(losses))
+
+
+    def forward(self, x, act, new_data=False):
 
         # Add grid to input
         grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
@@ -123,6 +148,11 @@ class Reconstruction(nn.Module):
             seq[idx+3] = x[i, :, 1, 1]
             seq[idx+4] = act[i]
         seq = seq.unsqueeze(1)
+        if new_data:
+            if self.embeddings is None:
+                self.embeddings = seq
+            else:
+                self.embeddings = torch.cat((self.embeddings, seq), dim=0)
 
         # Pass sequence through transformer
         for _ in range(1):
@@ -284,6 +314,14 @@ def make_batch(start, n):
     act = ACTIONS[idx:idx+n].to(DEVICE)
     return tgt[:-1], tgt[1:], act
 
+def make_embedding_batch(idx, n, batch_size=1):
+    tgt = DATA[idx:idx+n].to(DEVICE)
+    tgt = tgt.view(n, batch_size, -1).float()
+    # tgt = torch.clamp(torch.round(tgt), 0.0, 1.0)
+    seq = tgt.detach().clone()
+    seq[(torch.randint(0, n//2 -1 , (n//8,)) * 2) + 1] = 0.0 #-float("inf")
+    return seq[:-1], tgt[:-1], tgt[1:]
+
 def generate_batch_indexes(start, stop, step):
     idxs = []
     idx = start
@@ -301,8 +339,6 @@ model.to(DEVICE)
 if path.exists(PATH):
     print("Loading model from", PATH)
     model.load_state_dict(torch.load(PATH))
-
-optim = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 
 def exit_handler():
     print("Saving model as", PATH)
@@ -329,14 +365,14 @@ while step < NUM_STEPS:
     # train
     print("Training on New Data")
     for idx in tqdm(generate_batch_indexes(step - (SEQ_LEN*10), step, SEQ_LEN)):
-        optim.zero_grad()
+        model.optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
-        out = model(seq, act)
+        out = model(seq, act, new_data=True)
         out = out.permute(0, 2, 3, 1).reshape(-1, 256)
         tgt = tgt.view(-1).long()
         loss = F.cross_entropy(out, tgt)
         loss.backward()     
-        optim.step()
+        model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
     train_losses = []
@@ -356,16 +392,18 @@ while step < NUM_STEPS:
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN)):
-        optim.zero_grad()
+        model.optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
         out = model(seq, act)
         out = out.permute(0, 2, 3, 1).reshape(-1, 256)
         tgt = tgt.view(-1).long()
         loss = F.cross_entropy(out, tgt)
         loss.backward()     
-        optim.step()
+        model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
+    print("Training in the Embedding Space")
+    model.train_embeddings()
 
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
