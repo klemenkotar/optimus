@@ -108,7 +108,7 @@ class Reconstruction(nn.Module):
             ridx = random.randint(0, self.embeddings.shape[0] - seq_len)
             seq = self.embeddings[ridx:ridx+seq_len]
             tgt = seq.clone()
-            seq[torch.randint(0, seq.shape[0], (seq.shape[0]//8))] *= 0.0
+            seq[torch.randint(0, seq.shape[0], (seq.shape[0]//8,))] *= 0.0
             out = self.transformer(seq[:-1], tgt[:-1])
             loss = F.l1_loss(out, tgt[1:])
             loss.backward()
