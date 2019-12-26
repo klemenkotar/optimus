@@ -91,22 +91,47 @@ class Reconstruction(nn.Module):
 
         self.big_to_smol = nn.Linear(128, 64)
 
-        self.embeddings = None
-
         self.optim = torch.optim.Adam(self.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 
 
     def train_embeddings(self, epochs=100, seq_len=100):
 
-        if self.embeddings is None:
-            print("There are no embeddings!")
-            return
-
         losses = []
         for e in tqdm(range(epochs)):
             self.optim.zero_grad()
             ridx = random.randint(0, self.embeddings.shape[0] - seq_len)
-            seq = self.embeddings[ridx:ridx+seq_len]
+
+            x = DATA[ridx:ridx+seq_len]
+            act = ACTIONS[ridx:ridx+seq_len]
+            with torch.no_grad():
+                # Add grid to input
+                grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
+                grid[:, 0, :, :] = x
+
+                # Pass inputs through conv
+                conv1_out = self.conv1(grid)
+                conv2_out = self.conv2(conv1_out)
+                conv3_out = self.conv3(conv2_out)
+                conv4_out = self.conv4(conv3_out)
+                conv5_out = self.conv5(conv4_out)
+                conv6_out = self.conv6(conv5_out)
+                conv7_out = self.conv7(conv6_out)
+                x = conv7_out.squeeze()
+
+                # Convert actions into action embeddings
+                act = self.action_encoder(act)
+
+                # Construct transformer sequence from conv outputs
+                seq = torch.zeros((x.shape[0]*5, 128)).to(DEVICE)
+                for i in range(x.shape[0]):
+                    idx = i * 5
+                    seq[idx] = x[i, :, 0, 0]
+                    seq[idx+1] = x[i, :, 0, 1]
+                    seq[idx+2] = x[i, :, 1, 0]
+                    seq[idx+3] = x[i, :, 1, 1]
+                    seq[idx+4] = act[i]
+                seq = seq.unsqueeze(1)
+
             tgt = seq.clone()
             seq[torch.randint(0, seq.shape[0], (seq.shape[0]//8,))] *= 0.0
             out = self.transformer(seq[:-1], tgt[:-1])
@@ -117,7 +142,7 @@ class Reconstruction(nn.Module):
         print("Embeddings loss:", np.mean(losses))
 
 
-    def forward(self, x, act, new_data=False):
+    def forward(self, x, act):
 
         # Add grid to input
         grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
@@ -148,14 +173,9 @@ class Reconstruction(nn.Module):
             seq[idx+3] = x[i, :, 1, 1]
             seq[idx+4] = act[i]
         seq = seq.unsqueeze(1)
-        if new_data:
-            if self.embeddings is None:
-                self.embeddings = seq.detach()
-            else:
-                self.embeddings = torch.cat((self.embeddings, seq.detach()), dim=0)
 
         # Pass sequence through transformer
-        for _ in range(1):
+        for _ in range(5):
             new_seq = self.transformer(seq, seq)
             seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
         seq[-1] = act[-1]
@@ -398,8 +418,8 @@ while step < NUM_STEPS:
         model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
-    print("Training in the Embedding Space")
-    model.train_embeddings()
+    # print("Training in the Embedding Space")
+    # model.train_embeddings()
 
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
