@@ -11,7 +11,7 @@ import gym
 import cv2
 
 BATCH_SIZE = 1
-SEQ_LEN = 50
+SEQ_LEN = 10
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res-2x2.pt'
