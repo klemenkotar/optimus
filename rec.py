@@ -125,7 +125,8 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        for _ in range(5):
+        for x in range(5):
+            print("in iter", x)
             seq = self.transformer(seq, seq)
         seq[-1] = act[-1]
         trans_out = seq.squeeze()
