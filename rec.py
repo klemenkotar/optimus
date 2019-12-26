@@ -111,8 +111,8 @@ class Reconstruction(nn.Module):
             seq[torch.randint(0, seq.shape[0], (seq.shape[0]//8,))] *= 0.0
             out = self.transformer(seq[:-1], tgt[:-1])
             loss = F.l1_loss(out, tgt[1:])
-            loss.backward()
             losses.append(loss.item())
+            loss.backward()
             self.optim.step()
         print("Embeddings loss:", np.mean(losses))
 
@@ -150,9 +150,9 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
         if new_data:
             if self.embeddings is None:
-                self.embeddings = seq
+                self.embeddings = seq.detach()
             else:
-                self.embeddings = torch.cat((self.embeddings, seq), dim=0)
+                self.embeddings = torch.cat((self.embeddings, seq.detach()), dim=0)
 
         # Pass sequence through transformer
         for _ in range(1):
