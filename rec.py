@@ -96,7 +96,7 @@ class Reconstruction(nn.Module):
         self.optim = torch.optim.Adam(self.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 
 
-    def train_embeddings(self, epochs=10, seq_len=100):
+    def train_embeddings(self, epochs=100, seq_len=100):
 
         if self.embeddings is None:
             print("There are no embeddings!")
@@ -381,10 +381,6 @@ while step < NUM_STEPS:
     for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
