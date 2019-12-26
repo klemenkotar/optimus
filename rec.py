@@ -127,7 +127,7 @@ class Reconstruction(nn.Module):
         # Pass sequence through transformer
         for _ in range(1):
             new_seq = self.transformer(seq, seq)
-            seq[:-1] = seq[1:]
+            seq[:-1] = seq[1:].clone()
             seq[-1] = new_seq[-1]
         seq[-1] = act[-1]
         trans_out = seq.squeeze()
