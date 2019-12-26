@@ -14,7 +14,7 @@ import glob
 
 SEQ_LEN = 100
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-res.pt'
+PATH = 'models/rec-res-2x2.pt'
 
 DATA = torch.zeros(100, 84, 84, device=DEVICE)
 ACTIONS = torch.zeros(100, 1, device=DEVICE, dtype=torch.long)
