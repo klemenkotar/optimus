@@ -387,7 +387,7 @@ while step < NUM_STEPS:
     for idx in tqdm(generate_batch_indexes(step - (SEQ_LEN*10), step, SEQ_LEN)):
         model.optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
-        out = model(seq, act, new_data=True)
+        out = model(seq, act)
         out = out.permute(0, 2, 3, 1).reshape(-1, 256)
         tgt = tgt.view(-1).long()
         loss = F.cross_entropy(out, tgt)
