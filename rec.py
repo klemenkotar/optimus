@@ -94,15 +94,15 @@ class Reconstruction(nn.Module):
         self.optim = torch.optim.Adam(self.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 
 
-    def train_embeddings(self, epochs=100, seq_len=100):
+    def train_embeddings(self, step, epochs=100, seq_len=100):
 
         losses = []
         for e in tqdm(range(epochs)):
             self.optim.zero_grad()
-            ridx = random.randint(0, DATA.shape[0] - seq_len)
+            ridx = random.randint(0, step - seq_len)
 
-            x = DATA[ridx:ridx+seq_len]
-            act = ACTIONS[ridx:ridx+seq_len]
+            x = DATA[ridx:ridx+seq_len].to(DEVICE)
+            act = ACTIONS[ridx:ridx+seq_len].to(DEVICE)
             with torch.no_grad():
                 # Add grid to input
                 grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
@@ -419,7 +419,7 @@ while step < NUM_STEPS:
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
     print("Training in the Embedding Space")
-    model.train_embeddings()
+    model.train_embeddings(step)
 
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
