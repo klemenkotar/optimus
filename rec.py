@@ -11,7 +11,7 @@ import gym
 import cv2
 
 BATCH_SIZE = 1
-SEQ_LEN = 80
+SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res-2x2.pt'
@@ -418,8 +418,8 @@ while step < NUM_STEPS:
         model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
-    # print("Training in the Embedding Space")
-    # model.train_embeddings()
+    print("Training in the Embedding Space")
+    model.train_embeddings()
 
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
