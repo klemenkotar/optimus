@@ -123,7 +123,7 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        for _ in range(1):
+        for _ in range(5):
             seq = self.transformer(seq, seq)
         seq[-1] = act[-1]
         trans_out = seq.squeeze()
@@ -132,10 +132,10 @@ class Reconstruction(nn.Module):
         deconv_in = torch.zeros((x.shape[0], 128, 2, 2)).to(DEVICE)
         for i in range(x.shape[0]):
             idx = (i * 5)
-            deconv_in[i, :, 0, 0] = trans_out[idx] #* trans_out[idx+4]
-            deconv_in[i, :, 0, 1] = trans_out[idx+1] #* trans_out[idx+4]
-            deconv_in[i, :, 1, 0] = trans_out[idx+2] #* trans_out[idx+4]
-            deconv_in[i, :, 1, 1] = trans_out[idx+3] #* trans_out[idx+4]
+            deconv_in[i, :, 0, 0] = trans_out[idx] * trans_out[idx+4]
+            deconv_in[i, :, 0, 1] = trans_out[idx+1] * trans_out[idx+4]
+            deconv_in[i, :, 1, 0] = trans_out[idx+2] * trans_out[idx+4]
+            deconv_in[i, :, 1, 1] = trans_out[idx+3] * trans_out[idx+4]
 
         # Deconvolve embeddings
         # out = self.deconv(deconv_in)
