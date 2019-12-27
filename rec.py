@@ -11,7 +11,7 @@ import gym
 import cv2
 
 BATCH_SIZE = 1
-SEQ_LEN = 100
+SEQ_LEN = 80
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res-2x2.pt'
@@ -99,7 +99,7 @@ class Reconstruction(nn.Module):
         losses = []
         for e in tqdm(range(epochs)):
             self.optim.zero_grad()
-            ridx = random.randint(0, self.embeddings.shape[0] - seq_len)
+            ridx = random.randint(0, DATA.shape[0] - seq_len)
 
             x = DATA[ridx:ridx+seq_len]
             act = ACTIONS[ridx:ridx+seq_len]
