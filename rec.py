@@ -14,7 +14,7 @@ BATCH_SIZE = 1
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-res-2x2-next-predict.pt'
+PATH = 'models/rec-res-2x2.pt'
 LR = 1e-4
 WEIGHT_DECAY = 0.01
 
@@ -152,11 +152,11 @@ class Reconstruction(nn.Module):
         # x = x.unsqueeze(1)
         # x = self.conv(grid).squeeze()
         conv1_out = self.conv1(grid)
-        conv2_out = self.conv2(conv1_out)
-        conv3_out = self.conv3(conv2_out)
-        conv4_out = self.conv4(conv3_out)
-        conv5_out = self.conv5(conv4_out)
-        conv6_out = self.conv6(conv5_out)
+        conv2_out = self.relu(self.conv2(conv1_out))
+        conv3_out = self.relu(self.conv3(conv2_out))
+        conv4_out = self.relu(self.conv4(conv3_out))
+        conv5_out = self.relu(self.conv5(conv4_out))
+        conv6_out = self.relu(self.conv6(conv5_out))
         conv7_out = self.conv7(conv6_out)
         x = conv7_out.squeeze()
 
@@ -197,19 +197,19 @@ class Reconstruction(nn.Module):
         act_emb = trans_out[torch.arange(x.shape[0])*5]
         smol_emb = self.big_to_smol(act_emb)
 
-        deconv1_out = (self.deconv1(deconv_in) + conv7_out)
+        deconv1_out = (self.relu(self.deconv1(deconv_in)) + conv7_out)
         deconv1_out *= act_emb.repeat(1, deconv1_out.shape[2] * deconv1_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv1_out.shape[2], deconv1_out.shape[3])
-        deconv2_out = (self.deconv2(deconv1_out) + conv6_out)
+        deconv2_out = (self.relu(self.deconv2(deconv1_out)) + conv6_out)
         deconv2_out *= act_emb.repeat(1, deconv2_out.shape[2] * deconv2_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv2_out.shape[2], deconv2_out.shape[3])
-        deconv3_out = (self.deconv3(deconv2_out) + conv5_out)
+        deconv3_out = (self.relu(self.deconv3(deconv2_out)) + conv5_out)
         deconv3_out *= act_emb.repeat(1, deconv3_out.shape[2] * deconv3_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv3_out.shape[2], deconv3_out.shape[3])
-        deconv4_out = (self.deconv4(deconv3_out) + conv4_out)
+        deconv4_out = (self.relu(self.deconv4(deconv3_out)) + conv4_out)
         deconv4_out *= act_emb.repeat(1, deconv4_out.shape[2] * deconv4_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv4_out.shape[2], deconv4_out.shape[3])
-        deconv5_out = (self.deconv5(deconv4_out) + conv3_out)
+        deconv5_out = (self.relu(self.deconv5(deconv4_out)) + conv3_out)
         deconv5_out *= act_emb.repeat(1, deconv5_out.shape[2] * deconv5_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv5_out.shape[2], deconv5_out.shape[3])
-        deconv6_out = (self.deconv6(deconv5_out) + conv2_out)
+        deconv6_out = (self.relu(self.deconv6(deconv5_out)) + conv2_out)
         deconv6_out *= smol_emb.repeat(1, deconv6_out.shape[2] * deconv6_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv6_out.shape[2], deconv6_out.shape[3])
-        deconv7_out = (self.deconv7(deconv6_out) + conv1_out)
+        deconv7_out = (self.relu(self.deconv7(deconv6_out)) + conv1_out)
         deconv7_out *= smol_emb.repeat(1, deconv7_out.shape[2] * deconv7_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv7_out.shape[2], deconv7_out.shape[3])
         deconv8_out = (self.deconv8(deconv7_out))
         out = self.deconv9(deconv8_out)
@@ -414,8 +414,8 @@ while step < NUM_STEPS:
         model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
-    print("Training in the Embedding Space")
-    model.train_embeddings(step, epochs=100)
+    # print("Training in the Embedding Space")
+    # model.train_embeddings(step, epochs=100)
 
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
