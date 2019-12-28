@@ -99,7 +99,7 @@ class Reconstruction(nn.Module):
         # Pass inputs through conv
         # x = x.unsqueeze(1)
         # x = self.conv(grid).squeeze()
-        conv1_out = self.conv1(grid)
+        conv1_out = self.relu(self.conv1(grid))
         conv2_out = self.relu(self.conv2(conv1_out))
         conv3_out = self.relu(self.conv3(conv2_out))
         conv4_out = self.relu(self.conv4(conv3_out))
@@ -123,10 +123,14 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        for _ in range(5):
-            seq = self.transformer(seq, seq)
+        # for _ in range(5):
+        #     seq = self.transformer(seq, seq)
+        # seq[-1] = act[-1]
+        # trans_out = seq.squeeze()
+        seq = self.transformer(seq, seq)
         seq[-1] = act[-1]
         trans_out = seq.squeeze()
+
 
         # Construct conv inputs for reconstruction
         deconv_in = torch.zeros((x.shape[0], 128, 2, 2)).to(DEVICE)
@@ -143,19 +147,19 @@ class Reconstruction(nn.Module):
         act_emb = trans_out[torch.arange(x.shape[0])*5]
         smol_emb = self.big_to_smol(act_emb)
 
-        deconv1_out = (self.deconv1(deconv_in) + conv7_out)
+        deconv1_out = (self.relu(self.deconv1(deconv_in)) + conv7_out)
         deconv1_out *= act_emb.repeat(1, deconv1_out.shape[2] * deconv1_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv1_out.shape[2], deconv1_out.shape[3])
-        deconv2_out = (self.deconv2(deconv1_out) + conv6_out)
+        deconv2_out = (self.relu(self.deconv2(deconv1_out)) + conv6_out)
         deconv2_out *= act_emb.repeat(1, deconv2_out.shape[2] * deconv2_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv2_out.shape[2], deconv2_out.shape[3])
-        deconv3_out = (self.deconv3(deconv2_out) + conv5_out)
+        deconv3_out = (self.relu(self.deconv3(deconv2_out)) + conv5_out)
         deconv3_out *= act_emb.repeat(1, deconv3_out.shape[2] * deconv3_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv3_out.shape[2], deconv3_out.shape[3])
-        deconv4_out = (self.deconv4(deconv3_out) + conv4_out)
+        deconv4_out = (self.relu(self.deconv4(deconv3_out)) + conv4_out)
         deconv4_out *= act_emb.repeat(1, deconv4_out.shape[2] * deconv4_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv4_out.shape[2], deconv4_out.shape[3])
-        deconv5_out = (self.deconv5(deconv4_out) + conv3_out)
+        deconv5_out = (self.relu(self.deconv5(deconv4_out)) + conv3_out)
         deconv5_out *= act_emb.repeat(1, deconv5_out.shape[2] * deconv5_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv5_out.shape[2], deconv5_out.shape[3])
-        deconv6_out = (self.deconv6(deconv5_out) + conv2_out)
+        deconv6_out = (self.relu(self.deconv6(deconv5_out)) + conv2_out)
         deconv6_out *= smol_emb.repeat(1, deconv6_out.shape[2] * deconv6_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv6_out.shape[2], deconv6_out.shape[3])
-        deconv7_out = (self.deconv7(deconv6_out) + conv1_out)
+        deconv7_out = (self.relu(self.deconv7(deconv6_out)) + conv1_out)
         deconv7_out *= smol_emb.repeat(1, deconv7_out.shape[2] * deconv7_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv7_out.shape[2], deconv7_out.shape[3])
         deconv8_out = (self.deconv8(deconv7_out))
         out = self.deconv9(deconv8_out)
