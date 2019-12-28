@@ -15,8 +15,8 @@ SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res-2x2-next-predict.pt'
-LR = 1e-5
-WEIGHT_DECAY = 0.0
+LR = 1e-4
+WEIGHT_DECAY = 0.01
 
 DATA = torch.zeros(NUM_STEPS, 84, 84)
 ACTIONS = torch.zeros(NUM_STEPS, 1).long()
@@ -403,11 +403,6 @@ while step < NUM_STEPS:
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN)):
         model.optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
