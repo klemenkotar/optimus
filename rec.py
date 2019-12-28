@@ -14,7 +14,7 @@ BATCH_SIZE = 1
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-res-2x2-end-emb.pt'
+PATH = 'models/rec-res-2x2-detached.pt'
 LR = 1e-5
 WEIGHT_DECAY = 0.0
 
@@ -132,7 +132,7 @@ class Reconstruction(nn.Module):
                     seq[idx+4] = act[i]
                 seq = seq.unsqueeze(1)
 
-            tgt = seq.clone()
+            tgt = seq.clone().detach()
             seq[torch.randint(0, seq.shape[0], (seq.shape[0]//8,))] *= 0.0
             out = self.transformer(seq[:-1], tgt[:-1])
             loss = F.l1_loss(out, tgt[1:])
@@ -418,8 +418,8 @@ while step < NUM_STEPS:
         model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
-print("Training in the Embedding Space")
-model.train_embeddings(step, epochs=10000)
+    print("Training in the Embedding Space")
+    model.train_embeddings(step, epochs=2000)
 
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
