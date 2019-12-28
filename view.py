@@ -52,7 +52,7 @@ class Reconstruction(nn.Module):
         self.conv8 = nn.Conv2d(128, 128, (2, 2), stride=2)
 
         self.action_encoder = nn.Embedding(32, 128)
-        self.transformer = nn.Transformer(d_model=128, nhead=8, num_encoder_layers=12, dropout=0.1)
+        self.transformer = nn.Transformer(d_model=128, dropout=0.2)
         self.deconv = nn.Sequential(
             nn.ConvTranspose2d(128, 128, (4, 4), stride=2),
             nn.ReLU(),
@@ -124,7 +124,7 @@ class Reconstruction(nn.Module):
 
         # Pass sequence through transformer
         for _ in range(5):
-            seq = self.transformer(seq, seq)
+            seq = self.transformer(seq, seq, memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]-1))
         seq[-1] = act[-1]
         trans_out = seq.squeeze()
         # seq = self.transformer(seq, seq)
