@@ -151,7 +151,7 @@ class Reconstruction(nn.Module):
         # Pass inputs through conv
         # x = x.unsqueeze(1)
         # x = self.conv(grid).squeeze()
-        conv1_out = self.conv1(grid)
+        conv1_out = self.relu(self.conv1(grid))
         conv2_out = self.relu(self.conv2(conv1_out))
         conv3_out = self.relu(self.conv3(conv2_out))
         conv4_out = self.relu(self.conv4(conv3_out))
@@ -400,6 +400,11 @@ while step < NUM_STEPS:
     print("Training on Old Data")
     ridx = random.randint(0, step-(SEQ_LEN*10))
     for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
