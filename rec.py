@@ -419,8 +419,8 @@ while step < NUM_STEPS:
         model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
-    print("Training in the Embedding Space")
-    model.train_embeddings(step, epochs=100)
+    # print("Training in the Embedding Space")
+    # model.train_embeddings(step, epochs=100)
 
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
