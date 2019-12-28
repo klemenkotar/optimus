@@ -135,7 +135,7 @@ class Reconstruction(nn.Module):
             tgt = seq.clone().detach()
             seq[torch.randint(0, seq.shape[0], (seq.shape[0]//8,))] *= 0.0
             out = self.transformer(seq[:-1], tgt[:-1], memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]-1).to(DEVICE))
-            loss = F.l1_loss(out, tgt[5:])
+            loss = F.l1_loss(out, tgt[1:])
             losses.append(loss.item())
             loss.backward()
             self.optim.step()
