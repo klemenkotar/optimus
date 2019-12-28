@@ -14,7 +14,7 @@ import glob
 
 SEQ_LEN = 100
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-res-2x2.pt'
+PATH = 'models/rec-res-2x2-roll.pt'
 
 DATA = torch.zeros(100, 84, 84, device=DEVICE)
 ACTIONS = torch.zeros(100, 1, device=DEVICE, dtype=torch.long)
@@ -123,13 +123,13 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        # for _ in range(5):
-        #     seq = self.transformer(seq, seq)
-        # seq[-1] = act[-1]
-        # trans_out = seq.squeeze()
-        seq = self.transformer(seq, seq)
+        for _ in range(5):
+            seq = self.transformer(seq, seq)
         seq[-1] = act[-1]
         trans_out = seq.squeeze()
+        # seq = self.transformer(seq, seq)
+        # seq[-1] = act[-1]
+        # trans_out = seq.squeeze()
 
 
         # Construct conv inputs for reconstruction

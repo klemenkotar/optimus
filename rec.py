@@ -14,7 +14,7 @@ BATCH_SIZE = 1
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-res-2x2-emb.pt'
+PATH = 'models/rec-res-2x2-roll.pt'
 LR = 1e-4
 WEIGHT_DECAY = 0.01
 
@@ -175,11 +175,11 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        # for _ in range(5):
-        #     new_seq = self.transformer(seq, seq)
-        #     seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
-        seq = self.transformer(seq, seq)
-        seq[-1] = act[-1]
+        for _ in range(5):
+            new_seq = self.transformer(seq, seq)
+            seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
+        # seq = self.transformer(seq, seq)
+        # seq[-1] = act[-1]
         trans_out = seq.squeeze()
 
         # Construct conv inputs for reconstruction
