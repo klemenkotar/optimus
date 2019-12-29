@@ -15,8 +15,8 @@ SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'models/rec-res-2x2.pt'
-LR = 1e-4
-WEIGHT_DECAY = 0.01
+LR = 1e-5
+WEIGHT_DECAY = 0.0
 
 DATA = torch.zeros(NUM_STEPS, 84, 84)
 ACTIONS = torch.zeros(NUM_STEPS, 1).long()
@@ -138,6 +138,7 @@ class Reconstruction(nn.Module):
             loss = F.l1_loss(out, tgt[1:])
             losses.append(loss.item())
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.parameters(), 0.5)
             self.optim.step()
         print("Embeddings loss:", np.mean(losses))
 
@@ -392,7 +393,8 @@ while step < NUM_STEPS:
         out = out.permute(0, 2, 3, 1).reshape(-1, 256)
         tgt = tgt.view(-1).long()
         loss = F.cross_entropy(out, tgt)
-        loss.backward()     
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)  
         model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
@@ -415,7 +417,8 @@ while step < NUM_STEPS:
         out = out.permute(0, 2, 3, 1).reshape(-1, 256)
         tgt = tgt.view(-1).long()
         loss = F.cross_entropy(out, tgt)
-        loss.backward()     
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
         model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
