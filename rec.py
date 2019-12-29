@@ -14,8 +14,8 @@ BATCH_SIZE = 1
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-res-2x2.pt'
-LR = 1e-5
+PATH = 'models/rec-res-rollout.pt'
+LR = 1e-4
 WEIGHT_DECAY = 0.0
 
 DATA = torch.zeros(NUM_STEPS, 84, 84)
@@ -407,6 +407,16 @@ while step < NUM_STEPS:
     print("Training on Old Data")
     ridx = random.randint(0, step-(SEQ_LEN*10))
     for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
+                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
                     generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
