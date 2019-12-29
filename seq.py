@@ -29,14 +29,14 @@ def make_batch(n, batch_size=32):
         seq = gen_seq(start, n)
         seqs.append(seq)
     seqs = torch.stack(seqs, dim=1)
-    return seqs[:n//2], seqs
+    return seqs, seqs
 
 # transfomer = nn.Transformer(d_model=NUMBITS, nhead=16, num_encoder_layers=12)
 encoder_layers = nn.TransformerEncoderLayer(32, 8)
 model = nn.TransformerEncoder(encoder_layers, 8)
 optim = torch.optim.Adam(model.parameters())
 
-for i in range(100):
+for i in range(500):
     optim.zero_grad()
     seq, tgt = make_batch(256)
     out = model(seq)

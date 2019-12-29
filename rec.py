@@ -54,7 +54,10 @@ class Reconstruction(nn.Module):
         self.conv8 = nn.Conv2d(128, 128, (2, 2), stride=2)
 
         self.action_encoder = nn.Embedding(32, 128)
+        encoder_layer = torch.nn.TransformerEncoderLayer(128, 8)
+        self.encoder = torch.nn.TransformerEncoder(encoder_layer, 8)
         self.transformer = nn.Transformer(d_model=128, nhead=8, dropout=0.2)
+
         self.deconv = nn.Sequential(
             nn.ConvTranspose2d(128, 128, (4, 4), stride=2),
             nn.ReLU(),
@@ -134,7 +137,8 @@ class Reconstruction(nn.Module):
 
             tgt = seq.clone().detach()
             # seq[torch.randint(0, seq.shape[0], (seq.shape[0]//8,))] *= 0.0
-            out = self.transformer(seq[:-1], tgt[:-1], memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]-1).to(DEVICE))
+            # out = self.transformer(seq[:-1], tgt[:-1], memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]-1).to(DEVICE))
+            out = self.encoder(seq[:-1])
             loss = F.l1_loss(out, tgt[1:])
             losses.append(loss.item())
             loss.backward()
@@ -177,7 +181,8 @@ class Reconstruction(nn.Module):
 
         # Pass sequence through transformer
         for _ in range(5):
-            new_seq = self.transformer(seq, seq, memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
+            # new_seq = self.transformer(seq, seq, memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
+            new_seq = self.encoder(seq)
             seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
         # seq = self.transformer(seq, seq)
         # seq[-1] = act[-1]
@@ -422,8 +427,8 @@ while step < NUM_STEPS:
         model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
-    print("Training in the Embedding Space")
-    model.train_embeddings(step, epochs=100)
+    # print("Training in the Embedding Space")
+    # model.train_embeddings(step, epochs=100)
 
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
