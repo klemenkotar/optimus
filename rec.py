@@ -406,7 +406,7 @@ while step < NUM_STEPS:
     #     train_losses.append(loss.item())
     # print("Loss:", np.mean(train_losses))
 
-for e in range(100):
+for e in range(200):
     train_losses = []
     print("Epoch", e)
     # ridx = random.randint(0, len(DATA)-(SEQ_LEN*10))
