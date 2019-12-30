@@ -14,7 +14,7 @@ import glob
 
 SEQ_LEN = 100
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-res-2x2.pt'
+PATH = 'models/rec-res-train-later.pt'
 
 DATA = torch.zeros(100, 84, 84, device=DEVICE)
 ACTIONS = torch.zeros(100, 1, device=DEVICE, dtype=torch.long)
@@ -52,6 +52,8 @@ class Reconstruction(nn.Module):
         self.conv8 = nn.Conv2d(128, 128, (2, 2), stride=2)
 
         self.action_encoder = nn.Embedding(32, 128)
+        encoder_layer = torch.nn.TransformerEncoderLayer(128, 8)
+        self.encoder = torch.nn.TransformerEncoder(encoder_layer, 8)
         self.transformer = nn.Transformer(d_model=128, dropout=0.2)
         self.deconv = nn.Sequential(
             nn.ConvTranspose2d(128, 128, (4, 4), stride=2),
@@ -123,13 +125,16 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        for _ in range(5):
-            seq = self.transformer(seq, seq, memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
-        seq[-1] = act[-1]
-        trans_out = seq.squeeze()
+        # for _ in range(5):
+        #     seq = self.transformer(seq, seq, memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
+        # seq[-1] = act[-1]
+        # trans_out = seq.squeeze()
         # seq = self.transformer(seq, seq)
         # seq[-1] = act[-1]
         # trans_out = seq.squeeze()
+        seq = self.encoder(seq)
+        seq[-1] = act[-1]
+        trans_out = seq.squeeze()
 
 
         # Construct conv inputs for reconstruction
