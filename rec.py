@@ -14,7 +14,7 @@ BATCH_SIZE = 1
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-res-train-later.pt'
+PATH = 'models/rec-res-train-later-rollout.pt'
 LR = 1e-4
 WEIGHT_DECAY = 0.0
 
@@ -180,13 +180,13 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        # for _ in range(5):
+        for _ in range(5):
             # new_seq = self.transformer(seq, seq, memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
-            # new_seq = self.encoder(seq)
-            # seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
+            new_seq = self.encoder(seq)
+            seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
         # seq = self.transformer(seq, seq)
-        seq = self.encoder(seq)
-        seq[-1] = act[-1]
+        # seq = self.encoder(seq)
+        # seq[-1] = act[-1]
         trans_out = seq.squeeze()
 
         # Construct conv inputs for reconstruction
