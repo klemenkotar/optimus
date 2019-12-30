@@ -14,7 +14,7 @@ BATCH_SIZE = 1
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-res.pt'
+PATH = 'models/rec-res-train-later.pt'
 LR = 1e-4
 WEIGHT_DECAY = 0.0
 
@@ -389,44 +389,28 @@ while step < NUM_STEPS:
         step += 1
         if done:
             env.reset()
-    train_losses = []
+
+    # train_losses = []
     # train
-    print("Training on New Data")
-    for idx in tqdm(generate_batch_indexes(step - (SEQ_LEN*10), step, SEQ_LEN)):
-        model.optim.zero_grad()
-        seq, tgt, act = make_batch(idx, SEQ_LEN)
-        out = model(seq, act)
-        out = out.permute(0, 2, 3, 1).reshape(-1, 256)
-        tgt = tgt.view(-1).long()
-        loss = F.cross_entropy(out, tgt)
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)  
-        model.optim.step()
-        train_losses.append(loss.item())
-    print("Loss:", np.mean(train_losses))
+    # print("Training on New Data")
+    # for idx in tqdm(generate_batch_indexes(step - (SEQ_LEN*10), step, SEQ_LEN)):
+    #     model.optim.zero_grad()
+    #     seq, tgt, act = make_batch(idx, SEQ_LEN)
+    #     out = model(seq, act)
+    #     out = out.permute(0, 2, 3, 1).reshape(-1, 256)
+    #     tgt = tgt.view(-1).long()
+    #     loss = F.cross_entropy(out, tgt)
+    #     loss.backward()
+    #     torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)  
+    #     model.optim.step()
+    #     train_losses.append(loss.item())
+    # print("Loss:", np.mean(train_losses))
+
+for e in range(100):
     train_losses = []
-    print("Training on Old Data")
-    ridx = random.randint(0, step-(SEQ_LEN*10))
-    for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) +
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN) + 
-                    generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN)):
+    print("Epoch", e)
+    ridx = random.randint(0, len(DATA)-(SEQ_LEN*10))
+    for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN)):
         model.optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
         out = model(seq, act)
