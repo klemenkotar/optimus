@@ -410,7 +410,7 @@ for e in range(100):
     train_losses = []
     print("Epoch", e)
     ridx = random.randint(0, len(DATA)-(SEQ_LEN*10))
-    for idx in tqdm(generate_batch_indexes(ridx, ridx+(SEQ_LEN*10), SEQ_LEN)):
+    for idx in tqdm(generate_batch_indexes(0, len(DATA), SEQ_LEN)):
         model.optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
         out = model(seq, act)
