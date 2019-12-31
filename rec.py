@@ -416,7 +416,7 @@ for e in range(50):
         out = model(seq, act)
         out = out.permute(0, 2, 3, 1).reshape(-1, 256)
         tgt = tgt.view(-1).long()
-        loss = F.cross_entropy(out[-1], tgt[-1])
+        loss = F.cross_entropy(out[-1].unsqueeze(0), tgt[-1].unsqueeze(0))
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
         model.optim.step()
