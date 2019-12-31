@@ -14,7 +14,7 @@ BATCH_SIZE = 1
 SEQ_LEN = 100
 NUM_STEPS = 20000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-PATH = 'models/rec-res-train-later-rollout.pt'
+PATH = 'models/rec-res.pt'
 LR = 1e-4
 WEIGHT_DECAY = 0.0
 
@@ -182,7 +182,7 @@ class Reconstruction(nn.Module):
         # Pass sequence through transformer
         for _ in range(5):
             # new_seq = self.transformer(seq, seq, memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
-            new_seq = self.encoder(seq)
+            new_seq = self.encoder(seq, mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
             seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
         # seq = self.transformer(seq, seq)
         # seq = self.encoder(seq)
@@ -406,7 +406,7 @@ while step < NUM_STEPS:
     #     train_losses.append(loss.item())
     # print("Loss:", np.mean(train_losses))
 
-for e in range(200):
+for e in range(20):
     train_losses = []
     print("Epoch", e)
     # ridx = random.randint(0, len(DATA)-(SEQ_LEN*10))
