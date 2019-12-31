@@ -180,10 +180,10 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        for _ in range(50):
+        for _ in range(5):
             # new_seq = self.transformer(seq, seq, memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
             new_seq = self.encoder(seq, mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
-            seq = torch.cat((seq, new_seq[-1].unsqueeze(0)), dim=0)
+            seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
         # seq = self.transformer(seq, seq)
         # seq = self.encoder(seq)
         # seq[-1] = act[-1]
@@ -406,7 +406,7 @@ while step < NUM_STEPS:
     #     train_losses.append(loss.item())
     # print("Loss:", np.mean(train_losses))
 
-for e in range(40):
+for e in range(50):
     train_losses = []
     print("Epoch", e)
     # ridx = random.randint(0, len(DATA)-(SEQ_LEN*10))
