@@ -140,7 +140,7 @@ class Reconstruction(nn.Module):
             # out = self.transformer(seq[:-1], tgt[:-1], memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]-1).to(DEVICE))
             mask = torch.zeros((seq.shape[0], seq.shape[0])).to(DEVICE)
             mask[:, torch.randint(0, seq.shape[0], (seq.shape[0]//8,))] = float('-inf')
-            out = self.encoder(seq[:-1], mask=mask)
+            out = self.encoder(seq, mask=mask)
             loss = F.l1_loss(out, tgt[1:])
             losses.append(loss.item())
             loss.backward()
