@@ -408,7 +408,7 @@ while step < NUM_STEPS:
     #     train_losses.append(loss.item())
     # print("Loss:", np.mean(train_losses))
 
-for e in range(50):
+for e in range(10):
     train_losses = []
     print("Epoch", e)
     # ridx = random.randint(0, len(DATA)-(SEQ_LEN*10))
@@ -424,8 +424,28 @@ for e in range(50):
         model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
-    # print("Training in the Embedding Space")
-    # model.train_embeddings(step, epochs=500)
+
+print("Training in the Embedding Space")
+model.train_embeddings(step, epochs=5000)
+
+
+for e in range(10):
+    train_losses = []
+    print("Epoch", e)
+    # ridx = random.randint(0, len(DATA)-(SEQ_LEN*10))
+    for idx in tqdm(generate_batch_indexes(0, len(DATA), SEQ_LEN)):
+        model.optim.zero_grad()
+        seq, tgt, act = make_batch(idx, SEQ_LEN)
+        out = model(seq, act)
+        out = out.permute(0, 2, 3, 1).reshape(-1, 256)
+        tgt = tgt.view(-1).long()
+        loss = F.cross_entropy(out, tgt)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
+        model.optim.step()
+        train_losses.append(loss.item())
+    print("Loss:", np.mean(train_losses))
+    
 
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
