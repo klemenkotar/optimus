@@ -188,7 +188,7 @@ class Reconstruction(nn.Module):
             seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
         # seq = self.transformer(seq, seq)
         # seq = self.encoder(seq)
-        # seq[-1] = act[-1]
+        seq[-1] = act[-1]
         trans_out = seq.squeeze()
 
         # Construct conv inputs for reconstruction

@@ -135,7 +135,7 @@ class Reconstruction(nn.Module):
         # seq[-1] = act[-1]
         # trans_out = seq.squeeze()
         # seq = self.encoder(seq)
-        # seq[-1] = act[-1]
+        seq[-1] = act[-1]
         trans_out = seq.squeeze()
 
 
