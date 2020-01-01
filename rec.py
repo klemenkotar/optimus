@@ -425,7 +425,7 @@ for e in range(50):
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
     print("Training in the Embedding Space")
-    model.train_embeddings(step, epochs=100)
+    model.train_embeddings(step, epochs=500)
 
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
