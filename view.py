@@ -125,16 +125,16 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        for _ in range(5):
-            new_seq = self.encoder(seq)
-            seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
+        # for _ in range(5):
+        #     new_seq = self.encoder(seq)
+        #     seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
         #     seq = self.transformer(seq, seq, memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
         # seq[-1] = act[-1]
         # trans_out = seq.squeeze()
         # seq = self.transformer(seq, seq)
         # seq[-1] = act[-1]
         # trans_out = seq.squeeze()
-        # seq = self.encoder(seq)
+        seq = self.encoder(seq)
         seq[-1] = act[-1]
         trans_out = seq.squeeze()
 

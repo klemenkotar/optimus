@@ -140,8 +140,8 @@ class Reconstruction(nn.Module):
             # out = self.transformer(seq[:-1], tgt[:-1], memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]-1).to(DEVICE))
             mask = torch.zeros((seq.shape[0]-1, seq.shape[0]-1)).to(DEVICE)
             mask[:, torch.randint(0, seq.shape[0]-1, (seq.shape[0]//8,))] = float('-inf')
-            out = self.encoder(seq[:-1], mask=mask)
-            loss = F.l1_loss(out, tgt[1:])
+            out = self.encoder(seq[:-5], mask=mask)
+            loss = F.l1_loss(out, tgt[5:])
             losses.append(loss.item())
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.parameters(), 0.5)
@@ -182,12 +182,12 @@ class Reconstruction(nn.Module):
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
-        for _ in range(5):
-            # new_seq = self.transformer(seq, seq, memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
-            new_seq = self.encoder(seq, mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
-            seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
+        # for _ in range(5):
+        #     # new_seq = self.transformer(seq, seq, memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
+        #     new_seq = self.encoder(seq, mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]).to(DEVICE))
+        #     seq = torch.cat((seq[1:], new_seq[-1].unsqueeze(0)), dim=0)
         # seq = self.transformer(seq, seq)
-        # seq = self.encoder(seq)
+        seq = self.encoder(seq)
         seq[-1] = act[-1]
         trans_out = seq.squeeze()
 
@@ -424,28 +424,8 @@ for e in range(10):
         model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
-
-print("Training in the Embedding Space")
-model.train_embeddings(step, epochs=5000)
-
-
-for e in range(10):
-    train_losses = []
-    print("Epoch", e)
-    # ridx = random.randint(0, len(DATA)-(SEQ_LEN*10))
-    for idx in tqdm(generate_batch_indexes(0, len(DATA), SEQ_LEN)):
-        model.optim.zero_grad()
-        seq, tgt, act = make_batch(idx, SEQ_LEN)
-        out = model(seq, act)
-        out = out.permute(0, 2, 3, 1).reshape(-1, 256)
-        tgt = tgt.view(-1).long()
-        loss = F.cross_entropy(out, tgt)
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
-        model.optim.step()
-        train_losses.append(loss.item())
-    print("Loss:", np.mean(train_losses))
-    
+    print("Training in the Embedding Space")
+    model.train_embeddings(step, epochs=200)
 
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
