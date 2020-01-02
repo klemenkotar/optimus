@@ -138,8 +138,8 @@ class Reconstruction(nn.Module):
             tgt = seq.clone().detach()
             # seq[torch.randint(0, seq.shape[0], (seq.shape[0]//8,))] *= 0.0
             # out = self.transformer(seq[:-1], tgt[:-1], memory_mask=self.transformer.generate_square_subsequent_mask(seq.shape[0]-1).to(DEVICE))
-            mask = torch.zeros((seq.shape[0]-1, seq.shape[0]-1)).to(DEVICE)
-            mask[:, torch.randint(0, seq.shape[0]-1, (seq.shape[0]//8,))] = float('-inf')
+            mask = torch.zeros((seq.shape[0]-5, seq.shape[0]-5)).to(DEVICE)
+            mask[:, torch.randint(0, seq.shape[0]-5, (seq.shape[0]//8,))] = float('-inf')
             out = self.encoder(seq[:-5], mask=mask)
             loss = F.l1_loss(out, tgt[5:])
             losses.append(loss.item())
