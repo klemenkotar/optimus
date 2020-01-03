@@ -144,7 +144,7 @@ class Reconstruction(nn.Module):
             loss = F.l1_loss(out, tgt[5:])
             losses.append(loss.item())
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), 0.5)
+            # torch.nn.utils.clip_grad_norm_(self.parameters(), 0.5)
             self.optim.step()
         print("Embeddings loss:", np.mean(losses))
 
@@ -408,7 +408,7 @@ while step < NUM_STEPS:
     #     train_losses.append(loss.item())
     # print("Loss:", np.mean(train_losses))
 
-for e in range(10):
+for e in range(50):
     train_losses = []
     print("Epoch", e)
     # ridx = random.randint(0, len(DATA)-(SEQ_LEN*10))
@@ -420,12 +420,12 @@ for e in range(10):
         tgt = tgt.view(-1).long()
         loss = F.cross_entropy(out, tgt)
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
+        # torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
         model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
     print("Training in the Embedding Space")
-    model.train_embeddings(step, epochs=200)
+    model.train_embeddings(len(DATA), epochs=200)
 
 seq, tgt, act = make_batch(idx, SEQ_LEN)
 out = model(seq, act)
