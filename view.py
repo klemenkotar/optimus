@@ -122,6 +122,8 @@ class Reconstruction(nn.Module):
             seq[idx+2] = x[i, :, 1, 0]
             seq[idx+3] = x[i, :, 1, 1]
             seq[idx+4] = act[i]
+        plt.imshow(seq.detach().cpu().numpy().swapaxes(0,1))
+        plt.show()
         seq = seq.unsqueeze(1)
 
         # Pass sequence through transformer
@@ -309,7 +311,7 @@ model = Reconstruction()
 model.to(DEVICE)
 if path.exists(PATH):
     print("Loading model from", PATH)
-    model.load_state_dict(torch.load(PATH))
+    model.load_state_dict(torch.load(PATH, map_location=DEVICE))
     model.eval()
 
 env = gym.make("PongNoFrameskip-v4")
