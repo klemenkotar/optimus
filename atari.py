@@ -309,6 +309,18 @@ model.to(DEVICE)
 if path.exists(PATH):
     print("Loading model from", PATH)
     model.load_state_dict(torch.load(PATH))
+    print("Saving Images")
+    seq, tgt, act = make_batch(idx, SEQ_LEN)
+    out = model(seq, act)
+    tgt = tgt[0]
+    out = torch.argmax(out[0].permute(1,2,0), dim=2)
+    plt.figure(1)
+    plt.imshow(tgt.squeeze().cpu().detach().numpy())
+    plt.savefig('tgt-atari')
+    plt.figure(2)
+    plt.imshow(out.squeeze().cpu().detach().numpy())
+    plt.savefig('out-atari')
+
 
 def exit_handler():
     print("Saving model as", PATH)
@@ -348,14 +360,3 @@ for e in range(20):
         model.optim.step()
         train_losses.append(loss.item())
     print("Loss:", np.mean(train_losses))
-
-seq, tgt, act = make_batch(idx, SEQ_LEN)
-out = model(seq, act)
-tgt = tgt[0]
-out = torch.argmax(out[0].permute(1,2,0), dim=2)
-plt.figure(1)
-plt.imshow(tgt.squeeze().cpu().detach().numpy())
-plt.savefig('tgt-atari')
-plt.figure(2)
-plt.imshow(out.squeeze().cpu().detach().numpy())
-plt.savefig('out-atari')
