@@ -128,39 +128,42 @@ class Reconstruction(nn.Module):
             seq[idx+3] = x[i, :, 1, 1]
             seq[idx+4] = act[i]
 
-        ### We have the linear embedding sequence here 
+        ### We have the linear embedding sequence here
+        # plt.imshow(seq.detach().cpu().numpy().swapaxes(0,1))
+        # plt.show()
+        # exit()
         trans_out = seq
 
         # Construct conv inputs for reconstruction
         deconv_in = torch.zeros((x.shape[0], 128, 2, 2)).to(DEVICE)
         for i in range(x.shape[0]):
             idx = (i * 5)
-            deconv_in[i, :, 0, 0] = trans_out[idx] * trans_out[idx+4]
-            deconv_in[i, :, 0, 1] = trans_out[idx+1] * trans_out[idx+4]
-            deconv_in[i, :, 1, 0] = trans_out[idx+2] * trans_out[idx+4]
-            deconv_in[i, :, 1, 1] = trans_out[idx+3] * trans_out[idx+4]
+            deconv_in[i, :, 0, 0] = trans_out[idx] # * trans_out[idx+4]
+            deconv_in[i, :, 0, 1] = trans_out[idx+1] # * trans_out[idx+4]
+            deconv_in[i, :, 1, 0] = trans_out[idx+2] # * trans_out[idx+4]
+            deconv_in[i, :, 1, 1] = trans_out[idx+3] # * trans_out[idx+4]
 
         # Deconvolve embeddings
         # out = self.deconv(deconv_in)
 
-        act_emb = trans_out[torch.arange(x.shape[0])*5]
-        smol_emb = self.big_to_smol(act_emb)
+        # act_emb = trans_out[torch.arange(x.shape[0])*5]
+        # smol_emb = self.big_to_smol(act_emb)
 
-        deconv1_out = (self.relu(self.deconv1(deconv_in)) + conv7_out)
-        deconv1_out *= act_emb.repeat(1, deconv1_out.shape[2] * deconv1_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv1_out.shape[2], deconv1_out.shape[3])
-        deconv2_out = (self.relu(self.deconv2(deconv1_out)) + conv6_out)
-        deconv2_out *= act_emb.repeat(1, deconv2_out.shape[2] * deconv2_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv2_out.shape[2], deconv2_out.shape[3])
-        deconv3_out = (self.relu(self.deconv3(deconv2_out)) + conv5_out)
-        deconv3_out *= act_emb.repeat(1, deconv3_out.shape[2] * deconv3_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv3_out.shape[2], deconv3_out.shape[3])
-        deconv4_out = (self.relu(self.deconv4(deconv3_out)) + conv4_out)
-        deconv4_out *= act_emb.repeat(1, deconv4_out.shape[2] * deconv4_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv4_out.shape[2], deconv4_out.shape[3])
-        deconv5_out = (self.relu(self.deconv5(deconv4_out)) + conv3_out)
-        deconv5_out *= act_emb.repeat(1, deconv5_out.shape[2] * deconv5_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv5_out.shape[2], deconv5_out.shape[3])
-        deconv6_out = (self.relu(self.deconv6(deconv5_out)) + conv2_out)
-        deconv6_out *= smol_emb.repeat(1, deconv6_out.shape[2] * deconv6_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv6_out.shape[2], deconv6_out.shape[3])
-        deconv7_out = (self.relu(self.deconv7(deconv6_out)) + conv1_out)
-        deconv7_out *= smol_emb.repeat(1, deconv7_out.shape[2] * deconv7_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv7_out.shape[2], deconv7_out.shape[3])
-        deconv8_out = (self.deconv8(deconv7_out))
+        deconv1_out = self.relu(self.deconv1(deconv_in)) # + conv7_out)
+        # deconv1_out *= act_emb.repeat(1, deconv1_out.shape[2] * deconv1_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv1_out.shape[2], deconv1_out.shape[3])
+        deconv2_out = self.relu(self.deconv2(deconv1_out)) # + conv6_out)
+        # deconv2_out *= act_emb.repeat(1, deconv2_out.shape[2] * deconv2_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv2_out.shape[2], deconv2_out.shape[3])
+        deconv3_out = self.relu(self.deconv3(deconv2_out)) # + conv5_out)
+        # deconv3_out *= act_emb.repeat(1, deconv3_out.shape[2] * deconv3_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv3_out.shape[2], deconv3_out.shape[3])
+        deconv4_out = self.relu(self.deconv4(deconv3_out)) # + conv4_out)
+        # deconv4_out *= act_emb.repeat(1, deconv4_out.shape[2] * deconv4_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv4_out.shape[2], deconv4_out.shape[3])
+        deconv5_out = self.relu(self.deconv5(deconv4_out)) # + conv3_out)
+        # deconv5_out *= act_emb.repeat(1, deconv5_out.shape[2] * deconv5_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv5_out.shape[2], deconv5_out.shape[3])
+        deconv6_out = self.relu(self.deconv6(deconv5_out)) # + conv2_out)
+        # deconv6_out *= smol_emb.repeat(1, deconv6_out.shape[2] * deconv6_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv6_out.shape[2], deconv6_out.shape[3])
+        deconv7_out = self.relu(self.deconv7(deconv6_out)) # + conv1_out)
+        # deconv7_out *= smol_emb.repeat(1, deconv7_out.shape[2] * deconv7_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv7_out.shape[2], deconv7_out.shape[3])
+        deconv8_out = self.deconv8(deconv7_out)
         out = self.deconv9(deconv8_out)
 
         return out
@@ -308,7 +311,12 @@ model = Reconstruction()
 model.to(DEVICE)
 if path.exists(PATH):
     print("Loading model from", PATH)
-    model.load_state_dict(torch.load(PATH))
+    model.load_state_dict(torch.load(PATH, map_location=DEVICE))
+
+
+def exit_handler():
+    print("Saving model as", PATH)
+    torch.save(model.state_dict(), PATH)
     print("Saving Images")
     seq, tgt, act = make_batch(idx, SEQ_LEN)
     out = model(seq, act)
@@ -320,11 +328,6 @@ if path.exists(PATH):
     plt.figure(2)
     plt.imshow(out.squeeze().cpu().detach().numpy())
     plt.savefig('out-atari')
-
-
-def exit_handler():
-    print("Saving model as", PATH)
-    torch.save(model.state_dict(), PATH)
 atexit.register(exit_handler)
 
 env = gym.make("PongNoFrameskip-v4")
