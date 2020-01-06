@@ -129,9 +129,9 @@ class Reconstruction(nn.Module):
             seq[idx+4] = act[i]
 
         ### We have the linear embedding sequence here
-        plt.imshow(seq.detach().cpu().numpy().swapaxes(0,1))
-        plt.show()
-        exit()
+        # plt.imshow(seq.detach().cpu().numpy().swapaxes(0,1))
+        # plt.show()
+        # exit()
         trans_out = seq
 
         # Construct conv inputs for reconstruction
@@ -161,7 +161,7 @@ class Reconstruction(nn.Module):
         # deconv5_out *= act_emb.repeat(1, deconv5_out.shape[2] * deconv5_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv5_out.shape[2], deconv5_out.shape[3])
         deconv6_out = self.relu(self.deconv6(deconv5_out)) # + conv2_out)
         # deconv6_out *= smol_emb.repeat(1, deconv6_out.shape[2] * deconv6_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv6_out.shape[2], deconv6_out.shape[3])
-        deconv7_out = **self.relu(self.deconv7(deconv6_out))  + conv1_out)
+        deconv7_out = (self.relu(self.deconv7(deconv6_out))  + conv1_out)
         deconv7_out *= smol_emb.repeat(1, deconv7_out.shape[2] * deconv7_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv7_out.shape[2], deconv7_out.shape[3])
         deconv8_out = self.deconv8(deconv7_out)
         out = self.deconv9(deconv8_out)
