@@ -181,7 +181,7 @@ class Descriminator(nn.Module):
             nn.Sigmoid()
         )
 
-        self.optim = torch.optim.SGD(self.parameters(), lr=1e-6, weight_decay=WEIGHT_DECAY)
+        self.optim = torch.optim.SGD(self.parameters(), lr=5e-6, weight_decay=WEIGHT_DECAY)
 
     def forward(self, x):
         return self.discriminator(x)
@@ -379,7 +379,7 @@ for e in range(20):
         seq, tgt, act = make_batch(idx, SEQ_LEN)
         out = model(seq, act)
         gt_out = D(seq)
-        rec_out = D(torch.argmax(out, dim=1).unsqueeze(1).float()) + 1e-8
+        rec_out = D(torch.argmax(out, dim=1).unsqueeze(1).float())
         out = out.permute(0, 2, 3, 1).reshape(-1, 256)
         tgt = tgt.view(-1).long()
 
