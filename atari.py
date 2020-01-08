@@ -179,7 +179,7 @@ class Reconstruction(nn.Module):
         out = self.deconv9(deconv8_out)
 
         gt_out = self.discriminator(gtx)
-        rec_out = self.discriminator(out)
+        rec_out = self.discriminator(torch.argmax(out), dim=2)
 
         return out, gt_out, rec_out 
 
