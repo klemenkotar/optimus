@@ -145,8 +145,8 @@ class Reconstruction(nn.Module):
         # Deconvolve embeddings
         # out = self.deconv(deconv_in)
 
-        act_emb = trans_out[torch.arange(x.shape[0])*5]
-        smol_emb = self.big_to_smol(act_emb)
+        # act_emb = trans_out[torch.arange(x.shape[0])*5]
+        # smol_emb = self.big_to_smol(act_emb)
 
         deconv1_out = self.relu(self.deconv1(deconv_in)) # + conv7_out)
         # deconv1_out *= act_emb.repeat(1, deconv1_out.shape[2] * deconv1_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv1_out.shape[2], deconv1_out.shape[3])
@@ -160,8 +160,8 @@ class Reconstruction(nn.Module):
         # deconv5_out *= act_emb.repeat(1, deconv5_out.shape[2] * deconv5_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv5_out.shape[2], deconv5_out.shape[3])
         deconv6_out = self.relu(self.deconv6(deconv5_out)) # + conv2_out)
         # deconv6_out *= smol_emb.repeat(1, deconv6_out.shape[2] * deconv6_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv6_out.shape[2], deconv6_out.shape[3])
-        deconv7_out = (self.relu(self.deconv7(deconv6_out))  + conv1_out)
-        deconv7_out *= smol_emb.repeat(1, deconv7_out.shape[2] * deconv7_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv7_out.shape[2], deconv7_out.shape[3])
+        deconv7_out = self.relu(self.deconv7(deconv6_out)) # + conv1_out)
+        # deconv7_out *= smol_emb.repeat(1, deconv7_out.shape[2] * deconv7_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv7_out.shape[2], deconv7_out.shape[3])
         deconv8_out = self.deconv8(deconv7_out)
         out = self.deconv9(deconv8_out)
 
