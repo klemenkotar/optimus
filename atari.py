@@ -181,7 +181,7 @@ class Descriminator(nn.Module):
             nn.Sigmoid()
         )
 
-        self.optim = torch.optim.Adam(self.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+        self.optim = torch.optim.SGD(self.parameters(), lr=1e-5, weight_decay=WEIGHT_DECAY)
 
     def forward(self, x):
         return self.discriminator(x)
