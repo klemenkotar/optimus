@@ -379,7 +379,7 @@ for e in range(20):
         seq, tgt, act = make_batch(idx, SEQ_LEN)
         out = model(seq, act)
         gt_out = D(seq)
-        rec_out = D(torch.argmax(out, dim=1).unsqueeze(1).float())
+        rec_out = D(torch.argmax(out, dim=1).unsqueeze(1).float()) + 1e-8
         out = out.permute(0, 2, 3, 1).reshape(-1, 256)
         tgt = tgt.view(-1).long()
 
@@ -404,5 +404,5 @@ for e in range(20):
         g_losses.append(g_loss.item())
         train_losses.append(rec_loss.item() + d_loss.item() + g_loss.item())
 
-    print("Loss: %.5f | Rec Loss: %.5f | D Loss: %.5f | G Loss: %.5f" % 
-        (np.mean(train_losses), np.mean(rec_losses), np.mean(d_losses), np.mean(g_losses)))
+        print("Loss: %.5f | Rec Loss: %.5f | D Loss: %.5f | G Loss: %.5f" % 
+            (np.mean(train_losses), np.mean(rec_losses), np.mean(d_losses), np.mean(g_losses)))
