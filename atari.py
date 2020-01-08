@@ -388,4 +388,4 @@ for e in range(20):
         g_losses.append(g_loss.item())
         train_losses.append(loss.item())
     print("Loss: %.5f | Rec Loss: %.5f | D Loss: %.5f | G Loss: %.5f" % 
-        (np.mean(train_losses), np.mean(rec_loss), np.mean(d_loss), np.mean(g_loss)))
+        (np.mean(train_losses), np.mean(rec_losses), np.mean(d_losses), np.mean(g_losses)))
