@@ -94,22 +94,9 @@ class Reconstruction(nn.Module):
 
         self.big_to_smol = nn.Linear(128, 64)
 
-        self.discriminator = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(84*84, 512),
-            nn.ReLU(),
-            nn.Linear(512, 32),
-            nn.ReLU(),
-            nn.Linear(32, 1),
-            nn.Sigmoid()
-        )
-
         self.optim = torch.optim.Adam(self.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 
-
     def forward(self, x, act):
-
-        gtx = x
 
         # Add grid to input
         grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
@@ -178,10 +165,26 @@ class Reconstruction(nn.Module):
         deconv8_out = self.deconv8(deconv7_out)
         out = self.deconv9(deconv8_out)
 
-        gt_out = self.discriminator(gtx)
-        rec_out = self.discriminator(torch.argmax(out.detach(), dim=1).unsqueeze(1).float())
+        return out
 
-        return out, gt_out, rec_out 
+class Descriminator(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.discriminator = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(84*84, 512),
+            nn.ReLU(),
+            nn.Linear(512, 32),
+            nn.ReLU(),
+            nn.Linear(32, 1),
+            nn.Sigmoid()
+        )
+
+        self.optim = torch.optim.Adam(self.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
+
+    def forward(self, x):
+        return self.discriminator(x)
 
 class WarpFrame(gym.ObservationWrapper):
     def __init__(self, env, width=84, height=84, grayscale=True, dict_space_key=None):
@@ -328,13 +331,16 @@ if path.exists(PATH):
     print("Loading model from", PATH)
     model.load_state_dict(torch.load(PATH, map_location=DEVICE))
 
+D = Descriminator()
+D.to(DEVICE)
+
 
 def exit_handler():
     print("Saving model as", PATH)
     torch.save(model.state_dict(), PATH)
     print("Saving Images")
     seq, tgt, act = make_batch(idx, SEQ_LEN)
-    out, _, _ = model(seq, act)
+    out = model(seq, act)
     tgt = tgt[0]
     out = torch.argmax(out[0].permute(1,2,0), dim=2)
     plt.figure(1)
@@ -370,22 +376,33 @@ for e in range(20):
     print("Epoch", e)
 
     for idx in tqdm(generate_batch_indexes(0, len(DATA), SEQ_LEN)):
-        model.optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
-        out, gt_out, rec_out = model(seq, act)
+        out = model(seq, act)
+        gt_out = D(seq)
+        rec_out = D(torch.argmax(out, dim=1).unsqueeze(1).float())
         out = out.permute(0, 2, 3, 1).reshape(-1, 256)
         tgt = tgt.view(-1).long()
-        # Compute 3 losses
+
+        # Update generator
+        model.optim.zero_grad()
         rec_loss = F.cross_entropy(out, tgt)
         d_loss = -(torch.log(gt_out) + torch.log(1.0 - rec_out)).mean()
         g_loss = -(torch.log(1 - rec_out)).mean()
-        loss = rec_loss + d_loss + g_loss
-        loss.backward()
-        # torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
+        generator_loss = rec_loss + g_loss
+        generator_loss.backward(retain_graph=True)
         model.optim.step()
+
+        # Update discriminator
+        D.optim.zero_grad()
+        discriminator_loss = d_loss
+        discriminator_loss.backward()
+        D.optim.step()
+        # torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
+
         rec_losses.append(rec_loss.item())
         d_losses.append(d_loss.item())
         g_losses.append(g_loss.item())
-        train_losses.append(loss.item())
+        train_losses.append(rec_loss.item() + d_loss.item() + g_loss.item())
+
     print("Loss: %.5f | Rec Loss: %.5f | D Loss: %.5f | G Loss: %.5f" % 
         (np.mean(train_losses), np.mean(rec_losses), np.mean(d_losses), np.mean(g_losses)))
