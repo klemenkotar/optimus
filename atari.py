@@ -380,7 +380,6 @@ for e in range(20):
         d_loss = -(torch.log(gt_out) + torch.log(1.0 - rec_out)).mean()
         g_loss = -(torch.log(1 - rec_out)).mean()
         loss = rec_loss + d_loss + g_loss
-        print("Loss:", loss)
         loss.backward()
         # torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
         model.optim.step()
