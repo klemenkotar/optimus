@@ -94,10 +94,22 @@ class Reconstruction(nn.Module):
 
         self.big_to_smol = nn.Linear(128, 64)
 
+        self.discriminator = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(84*84, 512),
+            nn.ReLU(),
+            nn.Linear(512, 32),
+            nn.ReLU(),
+            nn.Linear(32, 1),
+            nn.Sigmoid()
+        )
+
         self.optim = torch.optim.Adam(self.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
 
 
     def forward(self, x, act):
+
+        gtx = x
 
         # Add grid to input
         grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
@@ -166,7 +178,10 @@ class Reconstruction(nn.Module):
         deconv8_out = self.deconv8(deconv7_out)
         out = self.deconv9(deconv8_out)
 
-        return out
+        gt_out = self.discriminator(gtx)
+        rec_out = self.discriminator(out)
+
+        return out, gt_out, rec_out 
 
 class WarpFrame(gym.ObservationWrapper):
     def __init__(self, env, width=84, height=84, grayscale=True, dict_space_key=None):
@@ -349,17 +364,28 @@ while step < NUM_STEPS:
 
 for e in range(20):
     train_losses = []
+    rec_losses = []
+    d_losses = []
+    g_losses = []
     print("Epoch", e)
 
     for idx in tqdm(generate_batch_indexes(0, len(DATA), SEQ_LEN)):
         model.optim.zero_grad()
         seq, tgt, act = make_batch(idx, SEQ_LEN)
-        out = model(seq, act)
+        out, gt_out, rec_out = model(seq, act)
         out = out.permute(0, 2, 3, 1).reshape(-1, 256)
         tgt = tgt.view(-1).long()
-        loss = F.cross_entropy(out, tgt)
+        # Compute 3 losses
+        rec_loss = F.cross_entropy(out, tgt)
+        d_loss = -(torch.log(gt_out) + torch.log(1.0 - rec_out)).mean()
+        g_loss = -(torch.log(1 - rec_out)).mean()
+        loss = rec_out + d_loss + g_loss
         loss.backward()
         # torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
         model.optim.step()
+        rec_losses.append(rec_loss.item())
+        d_losses.append(d_loss.item())
+        g_losses.append(g_loss.item())
         train_losses.append(loss.item())
-    print("Loss:", np.mean(train_losses))
+    print("Loss: %.5f | Rec Loss: %.5f | D Loss: %.5f | G Loss: %.5f" % 
+        (np.mean(train_losses), np.mean(rec_loss), np.mean(d_loss), np.mean(g_loss)))
