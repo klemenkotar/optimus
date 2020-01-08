@@ -179,7 +179,7 @@ class Reconstruction(nn.Module):
         out = self.deconv9(deconv8_out)
 
         gt_out = self.discriminator(gtx)
-        rec_out = self.discriminator(torch.argmax(out, dim=1).unsqueeze(1).float())
+        rec_out = self.discriminator(torch.argmax(out.detach(), dim=1).unsqueeze(1).float())
 
         return out, gt_out, rec_out 
 
@@ -334,7 +334,7 @@ def exit_handler():
     torch.save(model.state_dict(), PATH)
     print("Saving Images")
     seq, tgt, act = make_batch(idx, SEQ_LEN)
-    out = model(seq, act)
+    out, _, _ = model(seq, act)
     tgt = tgt[0]
     out = torch.argmax(out[0].permute(1,2,0), dim=2)
     plt.figure(1)
@@ -379,7 +379,8 @@ for e in range(20):
         rec_loss = F.cross_entropy(out, tgt)
         d_loss = -(torch.log(gt_out) + torch.log(1.0 - rec_out)).mean()
         g_loss = -(torch.log(1 - rec_out)).mean()
-        loss = rec_out + d_loss + g_loss
+        loss = rec_loss + d_loss + g_loss
+        print("Loss:", loss)
         loss.backward()
         # torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
         model.optim.step()
