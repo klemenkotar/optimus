@@ -404,5 +404,5 @@ for e in range(200):
         g_losses.append(g_loss.item())
         train_losses.append(rec_loss.item() + d_loss.item() + g_loss.item())
 
-        print("Loss: %.5f | Rec Loss: %.5f | D Loss: %.5f | G Loss: %.5f" % 
-            (np.mean(train_losses), np.mean(rec_losses), np.mean(d_losses), np.mean(g_losses)))
+    print("Loss: %.5f | Rec Loss: %.5f | D Loss: %.5f | G Loss: %.5f" % 
+        (np.mean(train_losses), np.mean(rec_losses), np.mean(d_losses), np.mean(g_losses)))
