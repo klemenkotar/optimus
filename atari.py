@@ -368,7 +368,7 @@ while step < NUM_STEPS:
         if done:
             env.reset()
 
-for e in range(200):
+for e in range(300):
     train_losses = []
     rec_losses = []
     d_losses = []
