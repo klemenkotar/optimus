@@ -50,7 +50,7 @@ def generate_batch_indexes(start, stop, step):
     random.shuffle(idxs)
     return idxs
 
-model = Reconstruction(lr=LR, weight_decay=WEIGHT_DECAY, device=DEVICE)
+model = Reconstructor(lr=LR, weight_decay=WEIGHT_DECAY, device=DEVICE)
 model.to(DEVICE)
 if path.exists(PATH):
     print("Loading model from", PATH)
