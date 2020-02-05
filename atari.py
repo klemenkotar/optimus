@@ -26,7 +26,7 @@ class Reconstruction(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(3, 64, (4, 4), stride=2, padding=2),
+            nn.Conv2d(1, 64, (4, 4), stride=2, padding=2),
             nn.ReLU(),
             nn.Conv2d(64, 64, (4, 4), stride=1),
             nn.ReLU(),
@@ -40,18 +40,9 @@ class Reconstruction(nn.Module):
             nn.ReLU(),
             nn.Conv2d(128, 128, (4, 4), stride=2),
             nn.ReLU(),
-            nn.Conv2d(128, 128, (4, 4), stride=1),
+            nn.Conv2d(128, 128, (2, 2), stride=2),
             nn.ReLU()
         )
-
-        self.conv1 = nn.Conv2d(3, 64, (4, 4), stride=2, padding=2)
-        self.conv2 = nn.Conv2d(64, 64, (4, 4), stride=1)
-        self.conv3 = nn.Conv2d(64, 128, (4, 4), stride=2)
-        self.conv4 = nn.Conv2d(128, 128, (4, 4), stride=1)
-        self.conv5 = nn.Conv2d(128, 128, (4, 4), stride=1)
-        self.conv6 = nn.Conv2d(128, 128, (4, 4), stride=1)
-        self.conv7 = nn.Conv2d(128, 128, (4, 4), stride=2)
-        self.conv8 = nn.Conv2d(128, 128, (2, 2), stride=2)
 
         self.action_encoder = nn.Embedding(32, 128)
         encoder_layer = torch.nn.TransformerEncoderLayer(128, 8)
@@ -59,6 +50,8 @@ class Reconstruction(nn.Module):
         self.transformer = nn.Transformer(d_model=128, nhead=8, dropout=0.2)
 
         self.deconv = nn.Sequential(
+            nn.ConvTranspose2d(128, 128, (2, 2), stride=2),
+            nn.ReLU(),
             nn.ConvTranspose2d(128, 128, (4, 4), stride=2),
             nn.ReLU(),
             nn.ConvTranspose2d(128, 128, (4, 4), stride=1),
@@ -76,17 +69,6 @@ class Reconstruction(nn.Module):
             nn.ConvTranspose2d(64, 256, (1, 1))
         )
 
-        self.relu = nn.ReLU()
-        self.deconv1 = nn.ConvTranspose2d(128, 128, (2, 2), stride=2)
-        self.deconv2 = nn.ConvTranspose2d(128, 128, (4, 4), stride=2)
-        self.deconv3 = nn.ConvTranspose2d(128, 128, (4, 4), stride=1)
-        self.deconv4 = nn.ConvTranspose2d(128, 128, (4, 4), stride=1)
-        self.deconv5 = nn.ConvTranspose2d(128, 128, (4, 4), stride=1)
-        self.deconv6 = nn.ConvTranspose2d(128, 64, (4, 4), stride=2)
-        self.deconv7 = nn.ConvTranspose2d(64, 64, (4, 4), stride=1)
-        self.deconv8 = nn.ConvTranspose2d(64, 64, (4, 4), stride=2, padding=2)
-        self.deconv9 = nn.ConvTranspose2d(64, 256, (1, 1))
-
         x_grid = np.reshape(np.arange(-1, 1.0001, 2/83), (1, 84))
         x_grid = torch.tensor(np.repeat(x_grid, 84, axis=0))
         y_grid = torch.rot90(x_grid, -1)
@@ -99,20 +81,12 @@ class Reconstruction(nn.Module):
     def forward(self, x, act):
 
         # Add grid to input
-        grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
-        grid[:, 0, :, :] = x
+        # grid = self.grid.repeat(x.shape[0], 1, 1, 1).float().to(DEVICE)
+        # grid[:, 0, :, :] = x
 
         # Pass inputs through conv
-        # x = x.unsqueeze(1)
-        # x = self.conv(grid).squeeze()
-        conv1_out = self.relu(self.conv1(grid))
-        conv2_out = self.relu(self.conv2(conv1_out))
-        conv3_out = self.relu(self.conv3(conv2_out))
-        conv4_out = self.relu(self.conv4(conv3_out))
-        conv5_out = self.relu(self.conv5(conv4_out))
-        conv6_out = self.relu(self.conv6(conv5_out))
-        conv7_out = self.conv7(conv6_out)
-        x = conv7_out.squeeze()
+        x = x.unsqueeze(1)
+        x = self.conv(x)
 
         # Convert actions into action embeddings
         act = self.action_encoder(act)
@@ -131,39 +105,22 @@ class Reconstruction(nn.Module):
         # plt.imshow(seq.detach().cpu().numpy().swapaxes(0,1))
         # plt.show()
         # exit()
+        # seq = seq.unsqueeze(1)
+        # trans_out = self.transformer(seq, seq)
+        # seq = seq.squeeze()
         trans_out = seq
 
         # Construct conv inputs for reconstruction
         deconv_in = torch.zeros((x.shape[0], 128, 2, 2)).to(DEVICE)
         for i in range(x.shape[0]):
             idx = (i * 5)
-            deconv_in[i, :, 0, 0] = trans_out[idx] # * trans_out[idx+4]
-            deconv_in[i, :, 0, 1] = trans_out[idx+1] # * trans_out[idx+4]
-            deconv_in[i, :, 1, 0] = trans_out[idx+2] # * trans_out[idx+4]
-            deconv_in[i, :, 1, 1] = trans_out[idx+3] # * trans_out[idx+4]
+            deconv_in[i, :, 0, 0] = trans_out[idx] * trans_out[idx+4]
+            deconv_in[i, :, 0, 1] = trans_out[idx+1] * trans_out[idx+4]
+            deconv_in[i, :, 1, 0] = trans_out[idx+2] * trans_out[idx+4]
+            deconv_in[i, :, 1, 1] = trans_out[idx+3] * trans_out[idx+4]
 
         # Deconvolve embeddings
-        # out = self.deconv(deconv_in)
-
-        # act_emb = trans_out[torch.arange(x.shape[0])*5]
-        # smol_emb = self.big_to_smol(act_emb)
-
-        deconv1_out = self.relu(self.deconv1(deconv_in)) # + conv7_out)
-        # deconv1_out *= act_emb.repeat(1, deconv1_out.shape[2] * deconv1_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv1_out.shape[2], deconv1_out.shape[3])
-        deconv2_out = self.relu(self.deconv2(deconv1_out)) # + conv6_out)
-        # deconv2_out *= act_emb.repeat(1, deconv2_out.shape[2] * deconv2_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv2_out.shape[2], deconv2_out.shape[3])
-        deconv3_out = self.relu(self.deconv3(deconv2_out)) # + conv5_out)
-        # deconv3_out *= act_emb.repeat(1, deconv3_out.shape[2] * deconv3_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv3_out.shape[2], deconv3_out.shape[3])
-        deconv4_out = self.relu(self.deconv4(deconv3_out)) # + conv4_out)
-        # deconv4_out *= act_emb.repeat(1, deconv4_out.shape[2] * deconv4_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv4_out.shape[2], deconv4_out.shape[3])
-        deconv5_out = self.relu(self.deconv5(deconv4_out)) # + conv3_out)
-        # deconv5_out *= act_emb.repeat(1, deconv5_out.shape[2] * deconv5_out.shape[3]).view(act_emb.shape[0], act_emb.shape[1], deconv5_out.shape[2], deconv5_out.shape[3])
-        deconv6_out = self.relu(self.deconv6(deconv5_out)) # + conv2_out)
-        # deconv6_out *= smol_emb.repeat(1, deconv6_out.shape[2] * deconv6_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv6_out.shape[2], deconv6_out.shape[3])
-        deconv7_out = self.relu(self.deconv7(deconv6_out)) # + conv1_out)
-        # deconv7_out *= smol_emb.repeat(1, deconv7_out.shape[2] * deconv7_out.shape[3]).view(smol_emb.shape[0], smol_emb.shape[1], deconv7_out.shape[2], deconv7_out.shape[3])
-        deconv8_out = self.deconv8(deconv7_out)
-        out = self.deconv9(deconv8_out)
+        out = self.deconv(deconv_in)
 
         return out
 
@@ -334,7 +291,6 @@ if path.exists(PATH):
 D = Descriminator()
 D.to(DEVICE)
 
-
 def exit_handler():
     print("Saving model as", PATH)
     torch.save(model.state_dict(), PATH)
@@ -386,7 +342,6 @@ for e in range(300):
         # Update generator
         model.optim.zero_grad()
         rec_loss = F.cross_entropy(out, tgt)
-        d_loss = -(torch.log(gt_out) + torch.log(1.0 - rec_out)).mean()
         g_loss = -(torch.log(1 - rec_out)).mean()
         generator_loss = rec_loss + g_loss
         generator_loss.backward(retain_graph=True)
@@ -394,6 +349,7 @@ for e in range(300):
 
         # Update discriminator
         D.optim.zero_grad()
+        d_loss = -(torch.log(gt_out) + torch.log(1.0 - rec_out)).mean()
         discriminator_loss = d_loss
         discriminator_loss.backward()
         D.optim.step()
