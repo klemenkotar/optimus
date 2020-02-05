@@ -1,0 +1,5 @@
+gym
+gym[atari]
+matplotlib
+opencv-python
+torch==1.2.0
