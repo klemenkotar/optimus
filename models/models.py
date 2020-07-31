@@ -157,7 +157,7 @@ class StaticReconstructor(nn.Module):
         self.device = device
 
     def forward(self, x):
-        return self.deconv(self.conv(x))
+        return torch.argmax(self.deconv(self.conv(x)), dim=1).float()
 
 
 class Descriminator(nn.Module):

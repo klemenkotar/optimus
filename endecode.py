@@ -15,7 +15,7 @@ from utils import WarpFrame, NoopResetEnv, MaxAndSkipEnv
 
 BATCH_SIZE = 1
 SEQ_LEN = 100
-NUM_STEPS = 1000
+NUM_STEPS = 100000 if torch.cuda.is_available() else 1000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
 LR = 1e-4
@@ -51,11 +51,11 @@ def generate_batch_indexes(start, stop, step):
     return idxs
 
 
-model = StaticReconstructor(lr=LR, weight_decay=WEIGHT_DECAY, device=DEVICE)
-model.to(DEVICE)
+G = StaticReconstructor(lr=LR, weight_decay=WEIGHT_DECAY, device=DEVICE)
+G.to(DEVICE)
 if path.exists(PATH):
     print("Loading model from", PATH)
-    model.load_state_dict(torch.load(PATH, map_location=DEVICE))
+    G.load_state_dict(torch.load(PATH, map_location=DEVICE))
 
 D = Descriminator(lr=3e-6, weight_decay=WEIGHT_DECAY, device=DEVICE)
 D.to(DEVICE)
@@ -63,12 +63,12 @@ D.to(DEVICE)
 
 def exit_handler():
     print("Saving model as", PATH)
-    torch.save(model.state_dict(), PATH)
+    torch.save(G.state_dict(), PATH)
     print("Saving Images")
-    seq, tgt = make_batch(idx, SEQ_LEN)
-    out = model(seq)
-    tgt = tgt[0]
-    out = torch.argmax(out[0].permute(1,2,0), dim=2)
+    x, z = make_batch(idx, SEQ_LEN)
+    out = G(x)
+    tgt = z[0]
+    out = torch.argmax(out[0].permute(1, 2, 0), dim=2)
     plt.figure(1)
     plt.imshow(tgt.squeeze().cpu().detach().numpy())
     plt.savefig('tgt-atari')
@@ -96,40 +96,25 @@ while step < NUM_STEPS:
             env.reset()
 
 for e in range(300):
-    train_losses = []
-    rec_losses = []
     d_losses = []
     g_losses = []
     print("Epoch", e)
 
     for idx in tqdm(generate_batch_indexes(0, len(DATA), SEQ_LEN)):
-        seq, tgt = make_batch(idx, SEQ_LEN)
-        out = model(seq)
-        gt_out = D(seq)
-        rec_out = D(torch.argmax(out, dim=1).unsqueeze(1).float())
-        out = out.permute(0, 2, 3, 1).reshape(-1, 256)
-        tgt = tgt.view(-1).long()
-
-        # Update generator
-        model.optim.zero_grad()
-        rec_loss = F.cross_entropy(out, tgt)
-        g_loss = -(torch.log(1 - rec_out)).mean()
-        generator_loss = rec_loss + g_loss
-        generator_loss.backward(retain_graph=True)
-        model.optim.step()
-
-        # Update discriminator
-        D.optim.zero_grad()
-        d_loss = -(torch.log(gt_out) + torch.log(1.0 - rec_out)).mean()
-        discriminator_loss = d_loss
-        discriminator_loss.backward()
+        # Generate batch of images
+        x, z = make_batch(idx, SEQ_LEN)
+        # Compute discriminator loss
+        D.zero_grad()
+        D_loss = -torch.mean(torch.log(D(x)) + torch.log(1 - D(G(z))))
+        D_loss.backward()
         D.optim.step()
-        # torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
+        # Compute generator loss
+        G.zero_grad()
+        G_loss = -torch.mean(torch.log(1 - D(G(z))))
+        G_loss.backward()
+        G.optim.step()
+        # Record losses
+        d_losses.append((D_loss.item()))
+        g_losses.append((G_loss.item()))
 
-        rec_losses.append(rec_loss.item())
-        d_losses.append(d_loss.item())
-        g_losses.append(g_loss.item())
-        train_losses.append(rec_loss.item() + d_loss.item() + g_loss.item())
-
-    print("Loss: %.5f | Rec Loss: %.5f | D Loss: %.5f | G Loss: %.5f" %
-        (np.mean(train_losses), np.mean(rec_losses), np.mean(d_losses), np.mean(g_losses)))
+    print("D Loss: %.5f | G Loss: %.5f" % (np.mean(d_losses), np.mean(g_losses)))
