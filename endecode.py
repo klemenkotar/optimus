@@ -68,7 +68,7 @@ def exit_handler():
     x, z = make_batch(idx, SEQ_LEN)
     out = G(x)
     tgt = z[0]
-    out = torch.argmax(out[0].permute(1, 2, 0), dim=2)
+    out = out[0]
     plt.figure(1)
     plt.imshow(tgt.squeeze().cpu().detach().numpy())
     plt.savefig('tgt-atari')
