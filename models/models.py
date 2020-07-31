@@ -110,6 +110,56 @@ class Reconstructor(nn.Module):
         return out
 
 
+class StaticReconstructor(nn.Module):
+
+    def __init__(self, lr=1e-4, weight_decay=0.0, device=torch.device("cpu")):
+        super().__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(1, 64, (4, 4), stride=2, padding=2),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 128, (4, 4), stride=2),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, (4, 4), stride=2),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, (2, 2), stride=2),
+            nn.ReLU()
+        )
+
+        self.deconv = nn.Sequential(
+            nn.ConvTranspose2d(128, 128, (2, 2), stride=2),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 128, (4, 4), stride=2),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 128, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 128, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 128, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 64, (4, 4), stride=2),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 64, (4, 4), stride=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 64, (4, 4), stride=2, padding=2),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 256, (1, 1))
+        )
+
+        self.optim = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
+        self.device = device
+
+    def forward(self, x):
+        return self.deconv(self.conv(x))
+
+
 class Descriminator(nn.Module):
 
     def __init__(self, lr=3e-6, weight_decay=0.0, device=torch.device("cpu")):
