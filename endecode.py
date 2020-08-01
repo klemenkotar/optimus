@@ -51,6 +51,11 @@ def generate_batch_indexes(start, stop, step):
     return idxs
 
 
+def random_sample():
+    ridx = random.randint(0, NUM_STEPS - 1000)
+    return DATA[ridx:ridx+1000]
+
+
 G = StaticReconstructor(lr=LR, weight_decay=WEIGHT_DECAY, device=DEVICE)
 G.to(DEVICE)
 if path.exists(PATH):
@@ -65,10 +70,9 @@ def exit_handler():
     print("Saving model as", PATH)
     torch.save(G.state_dict(), PATH)
     print("Saving Images")
-    x, z = make_batch(idx, SEQ_LEN)
-    out = G(x)
-    tgt = z[0]
-    out = out[0]
+    x = z = DATA[13]
+    out = G(x.unsqueeze(0))
+    tgt = z
     plt.figure(1)
     plt.imshow(tgt.squeeze().cpu().detach().numpy())
     plt.savefig('tgt-atari')
@@ -95,26 +99,37 @@ while step < NUM_STEPS:
         if done:
             env.reset()
 
-for e in range(300):
+for e in tqdm(range(1000)):
     d_losses = []
     g_losses = []
     print("Epoch", e)
 
-    for idx in tqdm(generate_batch_indexes(0, len(DATA), SEQ_LEN)):
-        # Generate batch of images
-        x, z = make_batch(idx, SEQ_LEN)
-        # Compute discriminator loss
-        D.zero_grad()
-        D_loss = -torch.mean(torch.log(D(x)) + torch.log(1 - D(G(z))))
-        D_loss.backward()
-        D.optim.step()
-        # Compute generator loss
-        G.zero_grad()
-        G_loss = -torch.mean(torch.log(1 - D(G(z))))
-        G_loss.backward()
-        G.optim.step()
-        # Record losses
-        d_losses.append((D_loss.item()))
-        g_losses.append((G_loss.item()))
+    # Generate batch of images
+    x = random_sample() / 255.0
+    z = random_sample() / 255.0
+    # Compute discriminator loss
+    D.zero_grad()
+    D_loss = -torch.mean(torch.log(D(x)) + torch.log(1 - D(G(z))))
+    D_loss.backward()
+    D.optim.step()
+    # Generate batch of images for discriminator
+    z = random_sample() / 255.0
+    # Compute generator loss
+    G.zero_grad()
+    G_loss = -torch.mean(torch.log(1 - D(G(z))))
+    G_loss.backward()
+    G.optim.step()
+    # Record losses
+    d_losses.append((D_loss.item()))
+    g_losses.append((G_loss.item()))
 
     print("D Loss: %.5f | G Loss: %.5f" % (np.mean(d_losses), np.mean(g_losses)))
+
+x = z = DATA[13]
+out = G(x.unsqueeze(0))
+tgt = z
+plt.figure(1)
+plt.imshow(tgt.squeeze().cpu().detach().numpy())
+plt.figure(2)
+plt.imshow(out.squeeze().cpu().detach().numpy())
+plt.show()

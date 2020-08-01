@@ -148,16 +148,17 @@ class StaticReconstructor(nn.Module):
             nn.ReLU(),
             nn.ConvTranspose2d(64, 64, (4, 4), stride=1),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 64, (4, 4), stride=2, padding=2),
-            nn.ReLU(),
-            nn.ConvTranspose2d(64, 256, (1, 1))
+            nn.ConvTranspose2d(64, 1, (4, 4), stride=2, padding=2),
+            nn.Sigmoid()
+            # nn.ReLU(),
+            # nn.ConvTranspose2d(64, 256, (1, 1))
         )
 
         self.optim = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
         self.device = device
 
     def forward(self, x):
-        return torch.argmax(self.deconv(self.conv(x)), dim=1).float()
+        return self.deconv(self.conv(x))
 
 
 class Descriminator(nn.Module):
