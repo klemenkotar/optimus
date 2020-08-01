@@ -93,7 +93,7 @@ while step < NUM_STEPS:
         step += 1
         if done:
             env.reset()
-DATA.to(DEVICE)
+DATA = DATA.to(DEVICE)
 
 for e in tqdm(range(1000)):
     d_losses = []
