@@ -51,11 +51,6 @@ def generate_batch_indexes(start, stop, step):
     return idxs
 
 
-def random_sample():
-    ridx = random.randint(0, NUM_STEPS - 1000)
-    return DATA[ridx:ridx+1000]
-
-
 G = StaticReconstructor(lr=LR, weight_decay=WEIGHT_DECAY, device=DEVICE)
 G.to(DEVICE)
 if path.exists(PATH):
@@ -105,15 +100,15 @@ for e in tqdm(range(1000)):
     print("Epoch", e)
 
     # Generate batch of images
-    x = random_sample() / 255.0
-    z = random_sample() / 255.0
+    x = DATA[torch.randint(0, NUM_STEPS, (NUM_STEPS,))[:1000]] / 255.0
+    z = DATA[torch.randint(0, NUM_STEPS, (NUM_STEPS,))[:1000]] / 255.0
     # Compute discriminator loss
     D.zero_grad()
     D_loss = -torch.mean(torch.log(D(x)) + torch.log(1 - D(G(z))))
     D_loss.backward()
     D.optim.step()
     # Generate batch of images for discriminator
-    z = random_sample() / 255.0
+    z = DATA[torch.randint(0, NUM_STEPS, (NUM_STEPS,))[:1000]] / 255.0
     # Compute generator loss
     G.zero_grad()
     G_loss = -torch.mean(torch.log(1 - D(G(z))))
