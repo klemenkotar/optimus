@@ -14,11 +14,11 @@ from models import StaticReconstructor, Descriminator
 from utils import WarpFrame, NoopResetEnv, MaxAndSkipEnv
 
 BATCH_SIZE = 1
-SEQ_LEN = 100
+SEQ_LEN = 10000
 NUM_STEPS = 100000 if torch.cuda.is_available() else 1000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
-LR = 1e-4
+LR = 2.5e-4
 WEIGHT_DECAY = 0.0
 
 DATA = torch.zeros(NUM_STEPS, 1, 84, 84)
@@ -86,30 +86,29 @@ env.reset()
 step = 0
 while step < NUM_STEPS:
     # Roll out env
-    for i in range(SEQ_LEN * 10):
-        action = random.randint(0, 5)
-        obs, rew, done, _ = env.step(action)
-        DATA[step] = torch.tensor(obs.reshape(1, 84, 84))
-        step += 1
-        if done:
-            env.reset()
+    action = random.randint(0, 5)
+    obs, rew, done, _ = env.step(action)
+    DATA[step] = torch.tensor(obs.reshape(1, 84, 84))
+    step += 1
+    if done:
+        env.reset()
 DATA = DATA.to(DEVICE)
 
-for e in tqdm(range(1000)):
+for e in tqdm(range(2000)):
     d_losses = []
     g_losses = []
     print("Epoch", e)
 
     # Generate batch of images
-    x = DATA[torch.randperm(NUM_STEPS)[:1000]] / 255.0
-    z = DATA[torch.randperm(NUM_STEPS)[:1000]] / 255.0
+    x = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
+    z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
     # Compute discriminator loss
     D.zero_grad()
     D_loss = -torch.mean(torch.log(D(x)) + torch.log(1 - D(G(z))))
     D_loss.backward()
     D.optim.step()
     # Generate batch of images for discriminator
-    z = DATA[torch.randperm(NUM_STEPS)[:1000]] / 255.0
+    z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
     # Compute generator loss
     G.zero_grad()
     G_loss = -torch.mean(torch.log(1 - D(G(z))))
