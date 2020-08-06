@@ -14,7 +14,7 @@ from models import StaticReconstructor, Descriminator
 from utils import WarpFrame, NoopResetEnv, MaxAndSkipEnv
 
 BATCH_SIZE = 1
-SEQ_LEN = 10000
+SEQ_LEN = 1000
 NUM_STEPS = 100000 if torch.cuda.is_available() else 1000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
@@ -94,7 +94,7 @@ while step < NUM_STEPS:
         env.reset()
 DATA = DATA.to(DEVICE)
 
-for e in tqdm(range(2000)):
+for e in tqdm(range(10000)):
     d_losses = []
     g_losses = []
     print("Epoch", e)
