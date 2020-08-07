@@ -1,6 +1,4 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import random
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,7 +6,7 @@ from tqdm import tqdm
 import atexit
 from os import path
 import gym
-import cv2
+from torch.utils.tensorboard import SummaryWriter
 
 from models import StaticReconstructor, Descriminator
 from utils import WarpFrame, NoopResetEnv, MaxAndSkipEnv
@@ -18,8 +16,9 @@ SEQ_LEN = 1000
 NUM_STEPS = 100000 if torch.cuda.is_available() else 1000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
-LR = 2.5e-4
+LR = 3e-4
 WEIGHT_DECAY = 0.0
+WRITER = SummaryWriter(log_dir="logs/endecode")
 
 DATA = torch.zeros(NUM_STEPS, 1, 84, 84)
 
@@ -94,7 +93,7 @@ while step < NUM_STEPS:
         env.reset()
 DATA = DATA.to(DEVICE)
 
-for e in tqdm(range(10000)):
+for e in tqdm(range(100000)):
     d_losses = []
     g_losses = []
     print("Epoch", e)
@@ -117,14 +116,15 @@ for e in tqdm(range(10000)):
     # Record losses
     d_losses.append((D_loss.item()))
     g_losses.append((G_loss.item()))
-
+    WRITER.add_scalar('Loss/D Loss', np.mean(d_losses), e)
+    WRITER.add_scalar('Loss/G Loss', np.mean(g_losses), e)
     print("D Loss: %.5f | G Loss: %.5f" % (np.mean(d_losses), np.mean(g_losses)))
 
-x = z = DATA[13]
-out = G(x.unsqueeze(0))
-tgt = z
-plt.figure(1)
-plt.imshow(tgt.squeeze().cpu().detach().numpy())
-plt.figure(2)
-plt.imshow(out.squeeze().cpu().detach().numpy())
-plt.show()
+# x = z = DATA[13]
+# out = G(x.unsqueeze(0))
+# tgt = z
+# plt.figure(1)
+# plt.imshow(tgt.squeeze().cpu().detach().numpy())
+# plt.figure(2)
+# plt.imshow(out.squeeze().cpu().detach().numpy())
+# plt.show()
