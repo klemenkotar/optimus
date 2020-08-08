@@ -18,7 +18,7 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
 LR = 3e-4
 WEIGHT_DECAY = 0.0
-WRITER = SummaryWriter(log_dir="logs/endecode")
+WRITER = SummaryWriter(log_dir="logs/endecode-same-x")
 
 DATA = torch.zeros(NUM_STEPS, 1, 84, 84)
 
@@ -82,17 +82,18 @@ env = WarpFrame(env, width=84, height=84)
 env = NoopResetEnv(env)
 env = MaxAndSkipEnv(env)
 env.reset()
-step = 0
-while step < NUM_STEPS:
+
+print("Generating Data")
+for step in tqdm(range(NUM_STEPS)):
     # Roll out env
     action = random.randint(0, 5)
     obs, rew, done, _ = env.step(action)
     DATA[step] = torch.tensor(obs.reshape(1, 84, 84))
-    step += 1
     if done:
         env.reset()
 DATA = DATA.to(DEVICE)
 
+print("Training")
 for e in tqdm(range(10000)):
     d_losses = []
     g_losses = []
@@ -103,7 +104,7 @@ for e in tqdm(range(10000)):
     z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
     # Compute discriminator loss
     D.zero_grad()
-    D_loss = -torch.mean(torch.log(D(x)) + torch.log(1 - D(G(z))))
+    D_loss = -torch.mean(torch.log(D(x)) + torch.log(1 - D(G(x))))
     D_loss.backward()
     D.optim.step()
     # Generate batch of images for discriminator
