@@ -56,7 +56,7 @@ if path.exists(PATH):
     print("Loading model from", PATH)
     G.load_state_dict(torch.load(PATH, map_location=DEVICE))
 
-D = Descriminator(lr=3e-6, weight_decay=WEIGHT_DECAY, device=DEVICE)
+D = Descriminator(lr=3e-4, weight_decay=WEIGHT_DECAY, device=DEVICE)
 D.to(DEVICE)
 
 
@@ -93,7 +93,7 @@ while step < NUM_STEPS:
         env.reset()
 DATA = DATA.to(DEVICE)
 
-for e in tqdm(range(100000)):
+for e in tqdm(range(10000)):
     d_losses = []
     g_losses = []
     print("Epoch", e)
