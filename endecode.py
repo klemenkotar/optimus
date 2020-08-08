@@ -18,7 +18,7 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
 LR = 3e-4
 WEIGHT_DECAY = 0.0
-WRITER = SummaryWriter(log_dir="logs/endecode-no-z")
+WRITER = SummaryWriter(log_dir="logs/endecode-no-z-high-lr")
 
 DATA = torch.zeros(NUM_STEPS, 1, 84, 84)
 
@@ -56,7 +56,7 @@ if path.exists(PATH):
     print("Loading model from", PATH)
     G.load_state_dict(torch.load(PATH, map_location=DEVICE))
 
-D = Descriminator(lr=3e-4, weight_decay=WEIGHT_DECAY, device=DEVICE)
+D = Descriminator(lr=1e-3, weight_decay=WEIGHT_DECAY, device=DEVICE)
 D.to(DEVICE)
 
 
