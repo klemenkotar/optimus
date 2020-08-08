@@ -172,7 +172,7 @@ class Descriminator(nn.Module):
             nn.Linear(512, 32),
             nn.ReLU(),
             nn.Linear(32, 1),
-            nn.Sigmoid()
+            #nn.Sigmoid()
         )
 
         self.optim = torch.optim.SGD(self.parameters(), lr=lr, weight_decay=0.0)
