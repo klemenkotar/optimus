@@ -95,7 +95,8 @@ DATA = DATA.to(DEVICE)
 
 print("Training")
 for e in tqdm(range(10000)):
-    d_losses = []
+    d_losses_real = []
+    d_losses_fake = []
     g_losses = []
     print("Epoch", e)
 
@@ -104,8 +105,9 @@ for e in tqdm(range(10000)):
     z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
     # Compute discriminator loss
     D.optim.zero_grad()
-    D_loss = -torch.mean(torch.log(D(x)) + torch.log(1 - D(G(z))))
-    D_loss.backward()
+    D_loss_real = -torch.mean(torch.log(D(x)))
+    D_loss_fake = -torch.mean(torch.log(1 - D(G(z))))
+    (D_loss_real + D_loss_fake).backward()
     D.optim.step()
     # Generate batch of images for discriminator
     z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
@@ -115,11 +117,12 @@ for e in tqdm(range(10000)):
     G_loss.backward()
     G.optim.step()
     # Record losses
-    d_losses.append((D_loss.item()))
+    d_losses_real.append(D_loss_real.item())
+    d_losses_fake.appennd(D_loss_fake.item())
     g_losses.append((G_loss.item()))
-    WRITER.add_scalar('Loss/D Loss', np.mean(d_losses), e)
+    WRITER.add_scalar('Loss/D Loss Real', np.mean(d_losses_real), e)
+    WRITER.add_scalar('Loss/D Loss Fake', np.mean(d_losses_fake), e)
     WRITER.add_scalar('Loss/G Loss', np.mean(g_losses), e)
-    print("D Loss: %.5f | G Loss: %.5f" % (np.mean(d_losses), np.mean(g_losses)))
 
 # x = z = DATA[13]
 # out = G(x.unsqueeze(0))
