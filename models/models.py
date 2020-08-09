@@ -148,7 +148,9 @@ class StaticReconstructor(nn.Module):
             nn.ReLU(),
             nn.ConvTranspose2d(64, 64, (4, 4), stride=1),
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 1, (4, 4), stride=2, padding=2),
+            nn.ConvTranspose2d(64, 64, (4, 4), stride=2, padding=2),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 1, (1, 1)),
             nn.Sigmoid()
             # nn.ReLU(),
             # nn.ConvTranspose2d(64, 256, (1, 1))
@@ -185,6 +187,5 @@ class Descriminator(nn.Module):
         with torch.no_grad():
             reals_out = self.forward(reals)
             fakes_out = self.forward(fakes)
-            print("Reals Out Meat", torch.mean(reals_out), "Fakes Out Mean", torch.mean(fakes_out))
             correct = torch.sum(reals_out >= 0.5) + torch.sum(fakes_out < 0.5)
         return correct.item() / (reals_out.shape[0] + fakes_out.shape[0])

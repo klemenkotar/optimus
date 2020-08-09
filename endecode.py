@@ -29,7 +29,7 @@ if path.exists(PATH):
     print("Loading model from", PATH)
     G.load_state_dict(torch.load(PATH, map_location=DEVICE))
 
-D = Descriminator(lr=1e-3, weight_decay=WEIGHT_DECAY, device=DEVICE)
+D = Descriminator(lr=3e-2, weight_decay=WEIGHT_DECAY, device=DEVICE)
 D.to(DEVICE)
 
 
@@ -68,7 +68,6 @@ DATA = DATA.to(DEVICE)
 
 print("Training")
 for e in tqdm(range(10000)):
-    print("Epoch", e)
     # Generate batch of images
     x = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
     z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
@@ -85,8 +84,6 @@ for e in tqdm(range(10000)):
     G_loss = torch.mean(torch.log(1 - D(G(z))))
     G_loss.backward()
     G.optim.step()
-    # Record losses
-    print(D.accuracy(x, G(z)))
     # Log results
     WRITER.add_scalar('Accuracy/D Accuracy', np.mean(D.accuracy(x, G(z))), e)
     WRITER.add_scalar('Loss/D Loss Real', np.mean(D_loss_real.item()), e)
