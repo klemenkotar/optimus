@@ -101,17 +101,17 @@ for e in tqdm(range(10000)):
 
     # Generate batch of images
     x = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
-    # z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
+    z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
     # Compute discriminator loss
-    D.zero_grad()
-    D_loss = -torch.mean(torch.log(D(x)) + torch.log(1 - D(G(x))))
+    D.optim.zero_grad()
+    D_loss = -torch.mean(torch.log(D(x)) + torch.log(1 - D(G(z))))
     D_loss.backward()
     D.optim.step()
     # Generate batch of images for discriminator
-    # z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
+    z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
     # Compute generator loss
-    G.zero_grad()
-    G_loss = -torch.mean(torch.log(1 - D(G(x))))
+    G.optim.zero_grad()
+    G_loss = -torch.mean(torch.log(1 - D(G(z))))
     G_loss.backward()
     G.optim.step()
     # Record losses
