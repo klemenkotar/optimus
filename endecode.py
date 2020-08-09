@@ -18,7 +18,7 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
 LR = 3e-4
 WEIGHT_DECAY = 0.0
-WRITER = SummaryWriter(log_dir="logs/endecode-no-z-high-lr")
+WRITER = SummaryWriter(log_dir="logs/endecode")
 
 DATA = torch.zeros(NUM_STEPS, 1, 84, 84)
 
