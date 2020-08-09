@@ -12,7 +12,7 @@ from models import StaticReconstructor, Descriminator
 from utils import WarpFrame, NoopResetEnv, MaxAndSkipEnv
 
 BATCH_SIZE = 1
-SEQ_LEN = 1000
+SEQ_LEN = 500
 NUM_STEPS = 10000 if torch.cuda.is_available() else 1000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
