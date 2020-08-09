@@ -29,7 +29,7 @@ if path.exists(PATH):
     print("Loading model from", PATH)
     G.load_state_dict(torch.load(PATH, map_location=DEVICE))
 
-D = Descriminator(lr=3e-2, weight_decay=WEIGHT_DECAY, device=DEVICE)
+D = Descriminator(lr=0.1, weight_decay=WEIGHT_DECAY, device=DEVICE)
 D.to(DEVICE)
 
 
