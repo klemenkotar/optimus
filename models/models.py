@@ -180,3 +180,11 @@ class Descriminator(nn.Module):
 
     def forward(self, x):
         return self.discriminator(x)
+
+    def accuracy(self, reals, fakes):
+        with torch.no_grad():
+            reals_out = self.forward(reals)
+            fakes_out = self.forward(fakes)
+            print("Reals Out Meat", torch.mean(reals_out), "Fakes Out Mean", torch.mean(fakes_out))
+            correct = torch.sum(reals_out >= 0.5) + torch.sum(fakes_out < 0.5)
+        return correct.item() / (reals_out.shape[0] + fakes_out.shape[0])

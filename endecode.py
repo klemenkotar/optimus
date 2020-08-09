@@ -13,7 +13,7 @@ from utils import WarpFrame, NoopResetEnv, MaxAndSkipEnv
 
 BATCH_SIZE = 1
 SEQ_LEN = 1000
-NUM_STEPS = 100000 if torch.cuda.is_available() else 1000
+NUM_STEPS = 10000 if torch.cuda.is_available() else 1000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
 LR = 3e-4
@@ -21,33 +21,6 @@ WEIGHT_DECAY = 0.0
 WRITER = SummaryWriter(log_dir="logs/endecode")
 
 DATA = torch.zeros(NUM_STEPS, 1, 84, 84)
-
-
-def make_batch(start, n):
-    tgt = DATA[idx:idx+n].to(DEVICE)
-    return tgt, tgt
-
-
-def make_embedding_batch(idx, n, batch_size=1):
-    tgt = DATA[idx:idx+n].to(DEVICE)
-    tgt = tgt.view(n, batch_size, -1).float()
-    # tgt = torch.clamp(torch.round(tgt), 0.0, 1.0)
-    seq = tgt.detach().clone()
-    seq[(torch.randint(0, n//2 -1 , (n//8,)) * 2) + 1] = 0.0 #-float("inf")
-    return seq[:-1], tgt[:-1], tgt[1:]
-
-
-def generate_batch_indexes(start, stop, step):
-    idxs = []
-    idx = start
-    while idx < stop:
-        tidx = idx + random.randint(-1000, 1000)
-        tidx = max(0, tidx)
-        tidx = min(stop-step, tidx)
-        idxs.append(tidx)
-        idx += step
-    random.shuffle(idxs)
-    return idxs
 
 
 G = StaticReconstructor(lr=LR, weight_decay=WEIGHT_DECAY, device=DEVICE)
@@ -95,11 +68,7 @@ DATA = DATA.to(DEVICE)
 
 print("Training")
 for e in tqdm(range(10000)):
-    d_losses_real = []
-    d_losses_fake = []
-    g_losses = []
     print("Epoch", e)
-
     for k in range(10):
         # Generate batch of images
         x = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
@@ -118,12 +87,12 @@ for e in tqdm(range(10000)):
     G_loss.backward()
     G.optim.step()
     # Record losses
-    d_losses_real.append(D_loss_real.item())
-    d_losses_fake.append(D_loss_fake.item())
-    g_losses.append((G_loss.item()))
-    WRITER.add_scalar('Loss/D Loss Real', np.mean(d_losses_real), e)
-    WRITER.add_scalar('Loss/D Loss Fake', np.mean(d_losses_fake), e)
-    WRITER.add_scalar('Loss/G Loss', np.mean(g_losses), e)
+    print(D.accuracy(x, G(z)))
+    # Log results
+    WRITER.add_scalar('Accuracy/D Accuracy', np.mean(D.accuracy(x, G(z))), e)
+    WRITER.add_scalar('Loss/D Loss Real', np.mean(D_loss_real.item()), e)
+    WRITER.add_scalar('Loss/D Loss Fake', np.mean(D_loss_fake.item()), e)
+    WRITER.add_scalar('Loss/G Loss', np.mean(G_loss.item()), e)
 
 # x = z = DATA[13]
 # out = G(x.unsqueeze(0))
