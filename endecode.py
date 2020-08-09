@@ -118,7 +118,7 @@ for e in tqdm(range(10000)):
     G.optim.step()
     # Record losses
     d_losses_real.append(D_loss_real.item())
-    d_losses_fake.appennd(D_loss_fake.item())
+    d_losses_fake.append(D_loss_fake.item())
     g_losses.append((G_loss.item()))
     WRITER.add_scalar('Loss/D Loss Real', np.mean(d_losses_real), e)
     WRITER.add_scalar('Loss/D Loss Fake', np.mean(d_losses_fake), e)
