@@ -77,14 +77,13 @@ for e in tqdm(range(10000)):
     D_loss_fake = -torch.mean(torch.log(1 - D(G(z))))
     (D_loss_real + D_loss_fake).backward()
     D.optim.step()
-    for k in range(5):
-        # Generate batch of images for generator
-        z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
-        # Compute generator loss
-        G.optim.zero_grad()
-        G_loss = torch.mean(torch.log(1 - D(G(z))))
-        G_loss.backward()
-        G.optim.step()
+    # Generate batch of images for generator
+    z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
+    # Compute generator loss
+    G.optim.zero_grad()
+    G_loss = torch.mean(torch.log(1 - D(G(z))))
+    G_loss.backward()
+    G.optim.step()
     # Log results
     WRITER.add_scalar('Accuracy/D Accuracy', np.mean(D.accuracy(x, G(z))), e)
     WRITER.add_scalar('Loss/D Loss Real', np.mean(D_loss_real.item()), e)

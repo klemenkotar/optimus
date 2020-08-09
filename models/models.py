@@ -165,19 +165,17 @@ class StaticReconstructor(nn.Module):
 
 class Descriminator(nn.Module):
 
-    def __init__(self, lr=1e-3, weight_decay=0.0, device=torch.device("cpu")):
+    def __init__(self, lr=0.1, weight_decay=0.0, device=torch.device("cpu")):
         super().__init__()
         self.discriminator = nn.Sequential(
             nn.Flatten(),
             nn.Linear(84*84, 512),
             nn.ReLU(),
-            nn.Linear(512, 32),
-            nn.ReLU(),
-            nn.Linear(32, 1),
-            nn.Sigmoid()
+            nn.Linear(512, 1),
+            nn.Sigmoid(),
         )
 
-        self.optim = torch.optim.SGD(self.parameters(), lr=lr, weight_decay=0.0)
+        self.optim = torch.optim.SGD(self.parameters(), lr=lr, weight_decay=0.0, momentum=0.0)
         self.device = device
 
     def forward(self, x):
