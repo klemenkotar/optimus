@@ -17,10 +17,10 @@ NUM_STEPS = 10000 if torch.cuda.is_available() else 1000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
 GLR = 3e-4
-DLR = 0.04
-WEIGHT_DECAY = 0.0
+DLR = 0.03
 L1_SCALER = 2.0
-WRITER = SummaryWriter(log_dir="logs/endecode+L1-"+str(L1_SCALER))
+WEIGHT_DECAY = 0.0
+WRITER = SummaryWriter(log_dir="logs/endecode-L1scaler"+str(L1_SCALER)+"-dLR"+str(DLR))
 
 DATA = torch.zeros(NUM_STEPS, 1, 84, 84)
 
