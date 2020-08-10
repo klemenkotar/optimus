@@ -163,7 +163,7 @@ class StaticReconstructor(nn.Module):
         return self.deconv(self.conv(x))
 
 
-class Descriminator(nn.Module):
+class Discriminator(nn.Module):
 
     def __init__(self, lr=0.1, weight_decay=0.0, device=torch.device("cpu")):
         super().__init__()
@@ -180,6 +180,42 @@ class Descriminator(nn.Module):
 
     def forward(self, x):
         return self.discriminator(x)
+
+    def accuracy(self, reals, fakes):
+        with torch.no_grad():
+            reals_out = self.forward(reals)
+            fakes_out = self.forward(fakes)
+            correct = torch.sum(reals_out >= 0.5) + torch.sum(fakes_out < 0.5)
+        return correct.item() / (reals_out.shape[0] + fakes_out.shape[0])
+
+
+class DiscriminatorConv(nn.Module):
+
+    def __init__(self, lr=0.1, weight_decay=0.0, device=torch.device("cpu")):
+        super().__init__()
+        self.discriminator = nn.Sequential(
+            nn.Conv2d(1, 16, (7, 7), bias=False),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Conv2d(16, 32, (3, 3), bias=False),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Conv2d(32, 32, (3, 3), bias=False),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Conv2d(32, 32, (3, 3), bias=False),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            nn.Conv2d(32, 32, (3, 3), bias=False),
+            nn.Sigmoid(),
+        )
+
+        self.optim = torch.optim.SGD(self.parameters(), lr=lr, weight_decay=0.0, momentum=0.0)
+        self.device = device
+
+    def forward(self, x):
+        x = self.discriminator(x)
+        return x
 
     def accuracy(self, reals, fakes):
         with torch.no_grad():
