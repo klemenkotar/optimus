@@ -206,7 +206,7 @@ class DiscriminatorConv(nn.Module):
             nn.Conv2d(32, 32, (3, 3), bias=False),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
-            nn.Conv2d(32, 32, (3, 3), bias=False),
+            nn.Conv2d(32, 1, (3, 3), bias=False),
             nn.Sigmoid(),
         )
 
