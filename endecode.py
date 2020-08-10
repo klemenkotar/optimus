@@ -8,7 +8,7 @@ from os import path
 import gym
 from torch.utils.tensorboard import SummaryWriter
 
-from models import StaticReconstructor, Descriminator
+from models import StaticReconstructor, DiscriminatorConv
 from utils import WarpFrame, NoopResetEnv, MaxAndSkipEnv
 
 BATCH_SIZE = 1
@@ -17,7 +17,7 @@ NUM_STEPS = 10000 if torch.cuda.is_available() else 1000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
 GLR = 3e-4
-DLR = 0.03
+DLR = 0.01
 L1_SCALER = 2.0
 WEIGHT_DECAY = 0.0
 WRITER = SummaryWriter(log_dir="logs/endecode-L1scaler"+str(L1_SCALER)+"-dLR"+str(DLR))
@@ -31,7 +31,7 @@ if path.exists(PATH):
     print("Loading model from", PATH)
     G.load_state_dict(torch.load(PATH, map_location=DEVICE))
 
-D = Descriminator(lr=DLR, weight_decay=WEIGHT_DECAY, device=DEVICE)
+D = DiscriminatorConv(lr=DLR, weight_decay=WEIGHT_DECAY, device=DEVICE)
 D.to(DEVICE)
 
 
