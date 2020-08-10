@@ -16,20 +16,21 @@ SEQ_LEN = 500
 NUM_STEPS = 10000 if torch.cuda.is_available() else 1000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
-LR = 3e-4
+GLR = 3e-4
+DLR = 0.04
 WEIGHT_DECAY = 0.0
-WRITER = SummaryWriter(log_dir="logs/endecode")
+WRITER = SummaryWriter(log_dir="logs/endecode+L1")
 
 DATA = torch.zeros(NUM_STEPS, 1, 84, 84)
 
 
-G = StaticReconstructor(lr=LR, weight_decay=WEIGHT_DECAY, device=DEVICE)
+G = StaticReconstructor(lr=GLR, weight_decay=WEIGHT_DECAY, device=DEVICE)
 G.to(DEVICE)
 if path.exists(PATH):
     print("Loading model from", PATH)
     G.load_state_dict(torch.load(PATH, map_location=DEVICE))
 
-D = Descriminator(lr=0.1, weight_decay=WEIGHT_DECAY, device=DEVICE)
+D = Descriminator(lr=DLR, weight_decay=WEIGHT_DECAY, device=DEVICE)
 D.to(DEVICE)
 
 
@@ -81,20 +82,15 @@ for e in tqdm(range(10000)):
     z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
     # Compute generator loss
     G.optim.zero_grad()
-    G_loss = torch.mean(torch.log(1 - D(G(z))))
-    G_loss.backward()
+    gout = G(z)
+    G_gan_loss = torch.mean(torch.log(1 - D(gout)))
+    G_l1_loss = torch.mean(torch.abs(gout - z))
+    (G_gan_loss + G_l1_loss).backward()
     G.optim.step()
     # Log results
     WRITER.add_scalar('Accuracy/D Accuracy', np.mean(D.accuracy(x, G(z))), e)
-    WRITER.add_scalar('Loss/D Loss Real', np.mean(D_loss_real.item()), e)
-    WRITER.add_scalar('Loss/D Loss Fake', np.mean(D_loss_fake.item()), e)
-    WRITER.add_scalar('Loss/G Loss', np.mean(G_loss.item()), e)
+    WRITER.add_scalar('Discriminator Loss/Loss Real', np.mean(D_loss_real.item()), e)
+    WRITER.add_scalar('Discriminator Loss/Loss Fake', np.mean(D_loss_fake.item()), e)
+    WRITER.add_scalar('Generator Loss/GAN Loss', np.mean(G_gan_loss.item()), e)
+    WRITER.add_scalar('Generator Loss/L1 Loss', np.mean(G_l1_loss.item()), e)
 
-# x = z = DATA[13]
-# out = G(x.unsqueeze(0))
-# tgt = z
-# plt.figure(1)
-# plt.imshow(tgt.squeeze().cpu().detach().numpy())
-# plt.figure(2)
-# plt.imshow(out.squeeze().cpu().detach().numpy())
-# plt.show()
