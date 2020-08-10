@@ -19,7 +19,8 @@ PATH = 'weights/endecode.pt'
 GLR = 3e-4
 DLR = 0.04
 WEIGHT_DECAY = 0.0
-WRITER = SummaryWriter(log_dir="logs/endecode+L1")
+L1_SCALER = 2.0
+WRITER = SummaryWriter(log_dir="logs/endecode+L1-"+str(L1_SCALER))
 
 DATA = torch.zeros(NUM_STEPS, 1, 84, 84)
 
@@ -84,7 +85,7 @@ for e in tqdm(range(10000)):
     G.optim.zero_grad()
     gout = G(z)
     G_gan_loss = torch.mean(torch.log(1 - D(gout)))
-    G_l1_loss = torch.mean(torch.abs(gout - z))
+    G_l1_loss = L1_SCALER * torch.mean(torch.abs(gout - z))
     (G_gan_loss + G_l1_loss).backward()
     G.optim.step()
     # Log results
