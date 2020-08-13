@@ -19,8 +19,9 @@ PATH = 'weights/endecode.pt'
 GLR = 3e-4
 DLR = 3e-4
 L1_SCALER = 2.0
+K = 5
 WEIGHT_DECAY = 0.0
-WRITER = SummaryWriter(log_dir="logs/endecode-L1scaler"+str(L1_SCALER)+"-dLR"+str(DLR))
+WRITER = SummaryWriter(log_dir="logs/endecode-L1scaler"+str(L1_SCALER)+"-dLR"+str(DLR)+"-K"+str(K))
 
 DATA = torch.zeros(NUM_STEPS, 1, 84, 84)
 
@@ -70,7 +71,7 @@ DATA = DATA.to(DEVICE)
 
 print("Training")
 for e in tqdm(range(10000)):
-    for k in range(5):
+    for k in range(K):
         # Generate batch of images for discriminator
         x = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
         z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
