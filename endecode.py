@@ -17,7 +17,7 @@ NUM_STEPS = 10000 if torch.cuda.is_available() else 1000
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
 GLR = 3e-4
-DLR = 0.01
+DLR = 3e-4
 L1_SCALER = 2.0
 WEIGHT_DECAY = 0.0
 WRITER = SummaryWriter(log_dir="logs/endecode-L1scaler"+str(L1_SCALER)+"-dLR"+str(DLR))
@@ -70,15 +70,16 @@ DATA = DATA.to(DEVICE)
 
 print("Training")
 for e in tqdm(range(10000)):
-    # Generate batch of images
-    x = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
-    z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
-    # Compute discriminator loss
-    D.optim.zero_grad()
-    D_loss_real = -torch.mean(torch.log(D(x)))
-    D_loss_fake = -torch.mean(torch.log(1 - D(G(z))))
-    (D_loss_real + D_loss_fake).backward()
-    D.optim.step()
+    for k in range(5):
+        # Generate batch of images for discriminator
+        x = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
+        z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
+        # Compute discriminator loss
+        D.optim.zero_grad()
+        D_loss_real = -torch.mean(torch.log(D(x)))
+        D_loss_fake = -torch.mean(torch.log(1 - D(G(z))))
+        (D_loss_real + D_loss_fake).backward()
+        D.optim.step()
     # Generate batch of images for generator
     z = DATA[torch.randperm(NUM_STEPS)[:SEQ_LEN]] / 255.0
     # Compute generator loss
