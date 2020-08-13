@@ -210,7 +210,7 @@ class DiscriminatorConv(nn.Module):
             nn.Sigmoid(),
         )
 
-        self.optim = torch.optim.SGD(self.parameters(), lr=lr, weight_decay=0.0)
+        self.optim = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=0.0)
         self.device = device
 
     def forward(self, x):

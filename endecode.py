@@ -18,8 +18,8 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 PATH = 'weights/endecode.pt'
 GLR = 3e-4
 DLR = 3e-4
-L1_SCALER = 2.0
-K = 5
+L1_SCALER = 0.5
+K = 6
 WEIGHT_DECAY = 0.0
 WRITER = SummaryWriter(log_dir="logs/endecode-L1scaler"+str(L1_SCALER)+"-dLR"+str(DLR)+"-K"+str(K))
 
