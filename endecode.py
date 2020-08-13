@@ -85,14 +85,13 @@ for e in tqdm(range(10000)):
     G.optim.zero_grad()
     gout = G(z)
     G_gan_loss = torch.mean(torch.log(1 - D(gout)))
-    # G_l1_loss = L1_SCALER * torch.mean(torch.abs(gout - z))
-    # (G_gan_loss + G_l1_loss).backward()
-    G_gan_loss.backward()
+    G_l1_loss = L1_SCALER * torch.mean(torch.abs(gout - z))
+    (G_gan_loss + G_l1_loss).backward()
     G.optim.step()
     # Log results
     WRITER.add_scalar('Accuracy/D Accuracy', np.mean(D.accuracy(x, G(z))), e)
     WRITER.add_scalar('Discriminator Loss/Loss Real', np.mean(D_loss_real.item()), e)
     WRITER.add_scalar('Discriminator Loss/Loss Fake', np.mean(D_loss_fake.item()), e)
     WRITER.add_scalar('Generator Loss/GAN Loss', np.mean(G_gan_loss.item()), e)
-    # WRITER.add_scalar('Generator Loss/L1 Loss', np.mean(G_l1_loss.item()), e)
+    WRITER.add_scalar('Generator Loss/L1 Loss', np.mean(G_l1_loss.item()), e)
 
